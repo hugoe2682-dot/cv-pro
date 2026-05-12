@@ -12,7 +12,7 @@ const globalForPrisma = globalThis as unknown as {
 
 const databaseUrl = process.env.DATABASE_URL!;
 const pool = new Pool({ connectionString: databaseUrl });
-const adapter = new PrismaNeon(pool);
+const adapter = new PrismaNeon(pool as any);
 
 export const prisma =
   globalForPrisma.prisma ??
