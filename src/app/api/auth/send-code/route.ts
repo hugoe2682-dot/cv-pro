@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../[...nextauth]/route";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { sendConfirmationCode } from "@/lib/mail";
 
 export async function POST() {
@@ -41,3 +41,4 @@ export async function POST() {
     return NextResponse.json({ error: "Erreur lors de l'envoi du code" }, { status: 500 });
   }
 }
+

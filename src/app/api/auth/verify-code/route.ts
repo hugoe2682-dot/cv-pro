@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../[...nextauth]/route";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { sendWelcomeEmail } from "@/lib/mail";
 
 export async function POST(request: Request) {
@@ -55,3 +55,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Erreur lors de la vérification" }, { status: 500 });
   }
 }
+
