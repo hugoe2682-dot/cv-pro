@@ -1,11 +1,8 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import EmailProvider from "next-auth/providers/email";
-import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { AuthOptions } from "next-auth";
-import bcrypt from "bcryptjs";
 import { sendWelcomeEmail } from "@/lib/mail";
 
 export const authOptions: AuthOptions = {
@@ -25,45 +22,6 @@ export const authOptions: AuthOptions = {
           emailConfirmed: true,
         }
       }
-    }),
-    CredentialsProvider({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email et mot de passe requis");
-        }
-
-        const user: any = await prisma.user.findUnique({
-          where: { email: credentials.email },
-        });
-
-        if (!user || !user.password) {
-          throw new Error("Utilisateur non trouvé");
-        }
-
-        const isPasswordCorrect = await bcrypt.compare(credentials.password, user.password);
-
-        if (!isPasswordCorrect) {
-          throw new Error("Mot de passe incorrect");
-        }
-
-        return user;
-      }
-    }),
-    EmailProvider({
-      server: {
-        host: process.env.EMAIL_SERVER_HOST,
-        port: Number(process.env.EMAIL_SERVER_PORT),
-        auth: {
-          user: process.env.EMAIL_SERVER_USER,
-          pass: process.env.EMAIL_SERVER_PASSWORD,
-        },
-      },
-      from: process.env.EMAIL_FROM,
     }),
   ],
   session: {

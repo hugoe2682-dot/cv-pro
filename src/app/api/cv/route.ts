@@ -51,6 +51,7 @@ export async function POST(request: Request) {
         const userUpdateData: any = {
           address: data.personal.address,
           phone: data.personal.phone,
+          image: data.personal.photo,
         };
 
         if (!currentUser.firstName && data.personal.firstName) userUpdateData.firstName = data.personal.firstName;

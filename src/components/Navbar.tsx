@@ -107,18 +107,29 @@ export default function Navbar() {
                       Éditeur
                     </Link>
                   </div>
-                  <div className="flex items-center gap-3 ml-4 border-l border-white/20 pl-4">
-                    <div className="flex flex-col items-end hidden sm:flex">
-                      <span className="text-xs font-bold leading-tight">
-                        {session.user?.name || "Candidat"}
-                      </span>
-                      <span className="text-[10px] text-white/60 leading-tight">
-                        Connecté
-                      </span>
-                    </div>
+                    <div className="flex items-center gap-3 ml-4 border-l border-white/20 pl-4">
+                      {session.user?.image ? (
+                        <img 
+                          src={session.user.image} 
+                          alt="" 
+                          className="w-9 h-9 rounded-full object-cover border border-white/20 shadow-sm" 
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center border border-white/20">
+                          <User size={18} className="text-white/60" />
+                        </div>
+                      )}
+                      <div className="flex flex-col items-start hidden sm:flex">
+                        <span className="text-xs font-bold leading-tight">
+                          {session.user?.name || "Candidat"}
+                        </span>
+                        <span className="text-[10px] text-white/60 leading-tight">
+                          Connecté
+                        </span>
+                      </div>
                     <button 
                       onClick={() => signOut({ callbackUrl: '/' })}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-600 bg-white rounded-full hover:bg-slate-100 transition-all shadow-sm"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-600 bg-white rounded-full hover:bg-slate-100 transition-all shadow-sm ml-2"
                     >
                       <LogOut size={16} />
                       <span className="hidden sm:inline">Se déconnecter</span>
