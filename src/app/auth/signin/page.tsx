@@ -24,12 +24,16 @@ function SignInContent() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-white p-4">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-tr from-slate-50 via-indigo-50/30 to-slate-100 p-4 relative overflow-hidden">
+      {/* Ambient background glows */}
+      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] bg-indigo-300/20 rounded-full blur-[80px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[350px] h-[350px] bg-violet-300/20 rounded-full blur-[80px] pointer-events-none" />
+
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-[420px] bg-blue-600 rounded-[2.5rem] shadow-2xl p-8 sm:p-12 flex flex-col relative overflow-hidden"
+        className="w-full max-w-[420px] bg-indigo-600/90 border border-white/20 backdrop-blur-xl rounded-[2.5rem] shadow-2xl p-8 sm:p-12 flex flex-col relative overflow-hidden"
       >
         <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
         
@@ -71,7 +75,7 @@ function SignInContent() {
             whileTap={{ scale: 0.98 }}
             onClick={handleGoogleSignIn}
             disabled={isLoading}
-            className="w-full py-4 bg-white text-blue-600 rounded-xl font-bold shadow-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-3 mb-6 disabled:opacity-70"
+            className="w-full py-4 bg-white text-indigo-600 rounded-xl font-bold shadow-lg hover:bg-indigo-50 transition-all flex items-center justify-center gap-3 mb-6 disabled:opacity-70"
           >
             {isLoading ? (
               <Loader2 className="animate-spin" size={20} />
