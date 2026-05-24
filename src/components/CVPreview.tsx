@@ -252,24 +252,26 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
           </div>
         </div>
 
-        {/* Photo / QR Code Container */}
-        <div className="flex-shrink-0">
-          {cvData.personal.includePhoto && cvData.personal.photo ? (
+        {/* Photo & QR Code Container */}
+        <div className="flex-shrink-0 flex items-center gap-4">
+          {/* Photo (if enabled and present) */}
+          {cvData.personal.includePhoto && cvData.personal.photo && (
             <img 
               src={cvData.personal.photo} 
               alt="Profile" 
               className="w-28 h-28 rounded-xl object-cover border-2 border-slate-100 shadow-sm"
             />
-          ) : !cvData.personal.includePhoto ? (
-            <div className={`w-28 h-28 bg-white p-1 rounded-xl border border-slate-200 shadow-sm ${name.isMock ? "opacity-40 grayscale" : ""}`}>
-              <QRCode 
-                value={generateQRCodeContent()}
-                size={102}
-                style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                viewBox={`0 0 102 102`}
-              />
-            </div>
-          ) : null}
+          )}
+
+          {/* QR Code (Always displayed here to guarantee it is on the first page) */}
+          <div className={`w-28 h-28 bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex items-center justify-center ${name.isMock ? "opacity-40 grayscale" : ""}`}>
+            <QRCode 
+              value={generateQRCodeContent()}
+              size={96}
+              style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+              viewBox={`0 0 96 96`}
+            />
+          </div>
         </div>
       </div>
 
@@ -418,18 +420,7 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
             </div>
           )}
 
-          {(name.value || email.value || phone.value) && cvData.personal.includePhoto && (
-            <div className="mt-auto pt-8 pb-4 flex justify-end">
-              <div className={`w-24 h-24 bg-white p-1 rounded-xl border border-slate-200 shadow-sm ${name.isMock ? "opacity-40 grayscale" : ""}`}>
-                <QRCode 
-                  value={generateQRCodeContent()}
-                  size={88}
-                  style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-                  viewBox={`0 0 88 88`}
-                />
-              </div>
-            </div>
-          )}
+
         </div>
       </div>
     </div>

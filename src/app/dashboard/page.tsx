@@ -22,17 +22,28 @@ import {
   Key,
   RefreshCw,
   X,
-  CheckCircle2
+  CheckCircle2,
+  Download,
+  ExternalLink
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingScreen from "@/components/LoadingScreen";
 import Modal from "@/components/Modal";
+import { useReactToPrint } from "react-to-print";
+import CVPreview from "@/components/CVPreview";
 
 export default function DashboardPage() {
   const { user, session, status } = useAuth();
   const router = useRouter();
   const [userData, setUserData] = useState<any>(null);
   const [cvId, setCvId] = useState<string | null>(null);
+  const [cvData, setCvData] = useState<any>(null);
+  const [isCvPreviewOpen, setIsCvPreviewOpen] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const reactToPrintFn = useReactToPrint({ contentRef });
+
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState<"overview" | "profile">("overview");
@@ -96,12 +107,13 @@ export default function DashboardPage() {
         });
       }
 
-      // Fetch CV to get the ID
+      // Fetch CV to get the ID and data
       const cvRes = await fetch("/api/cv");
       if (cvRes.ok) {
         const cvs = await cvRes.json();
         if (cvs && cvs.length > 0) {
           setCvId(cvs[0].id);
+          setCvData(cvs[0].data);
         }
       }
     } catch (error) {
@@ -283,7 +295,13 @@ export default function DashboardPage() {
           <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={() => cvId ? router.push(`/cv/${cvId}`) : router.push("/editor")}
+            onClick={() => {
+              if (cvId && cvData) {
+                setIsCvPreviewOpen(true);
+              } else {
+                router.push("/editor");
+              }
+            }}
             className="group cursor-pointer relative overflow-hidden bg-white dark:bg-slate-900 rounded-[3rem] p-8 shadow-xl shadow-blue-500/5 border border-slate-200 dark:border-slate-800 flex flex-col items-center text-center transition-all"
           >
             <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -619,6 +637,108 @@ export default function DashboardPage() {
             Accéder à l'éditeur complet
           </button>
         </motion.div>
+
+        {/* PDF CV Preview Modal */}
+        <AnimatePresence>
+          {isCvPreviewOpen && cvData && (
+            <div className="fixed inset-0 z-[120] flex flex-col bg-slate-950/80 backdrop-blur-lg overflow-y-auto">
+              {/* Header Bar */}
+              <div className="sticky top-0 z-30 w-full bg-slate-900/90 border-b border-slate-800 backdrop-blur-md px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xl">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <FileText size={22} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-lg font-bold text-white leading-tight">Mon CV en PDF</h3>
+                    <p className="text-xs text-slate-400">Générez, téléchargez ou partagez votre CV au format A4</p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Print / Download Button */}
+                  <button
+                    onClick={() => reactToPrintFn()}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 active:scale-95 cursor-pointer"
+                  >
+                    <Download size={16} />
+                    Télécharger PDF / Imprimer
+                  </button>
+
+                  {/* Edit Button */}
+                  <button
+                    onClick={() => router.push("/editor")}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold rounded-xl transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Eye size={16} />
+                    Modifier le CV
+                  </button>
+
+                  {/* Copy Link Button */}
+                  <button
+                    onClick={() => {
+                      if (cvId) {
+                        navigator.clipboard.writeText(`${window.location.origin}/cv/${cvId}`);
+                        setIsCopied(true);
+                        setTimeout(() => setIsCopied(false), 2000);
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl transition-all active:scale-95 cursor-pointer ${
+                      isCopied 
+                        ? "bg-emerald-600 text-white" 
+                        : "bg-slate-800 hover:bg-slate-700 text-slate-200"
+                    }`}
+                  >
+                    {isCopied ? (
+                      <>
+                        <CheckCircle2 size={16} />
+                        Lien Copié !
+                      </>
+                    ) : (
+                      <>
+                        <QrCode size={16} />
+                        Copier lien public
+                      </>
+                    )}
+                  </button>
+
+                  {/* Public Page Button */}
+                  <button
+                    onClick={() => window.open(`/cv/${cvId}`, '_blank')}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold rounded-xl transition-all active:scale-95 cursor-pointer"
+                  >
+                    <ExternalLink size={16} />
+                    Lien public
+                  </button>
+
+                  {/* Divider */}
+                  <div className="h-6 w-px bg-slate-800 hidden md:block mx-1" />
+
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setIsCvPreviewOpen(false)}
+                    className="p-2.5 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+
+              {/* PDF Preview Document Container */}
+              <div className="flex-1 flex justify-center items-start p-4 md:p-8 overflow-y-auto w-full">
+                <motion.div 
+                  initial={{ opacity: 0, y: 30, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                  className="w-full max-w-[210mm] shadow-2xl rounded-sm overflow-hidden bg-white print:shadow-none print:w-[210mm] print:h-[297mm] my-4"
+                >
+                  <div ref={contentRef} className="w-full bg-white print:p-0">
+                    <CVPreview cvData={cvData} cvId={cvId} />
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

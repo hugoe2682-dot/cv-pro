@@ -16,7 +16,17 @@ export async function GET() {
       orderBy: { updatedAt: "desc" },
     });
 
-    return NextResponse.json(cvs);
+    // Re-inject the stored profilePhoto back into data.personal.photo
+    // so the editor and preview work transparently
+    const cvsWithPhoto = cvs.map((cv) => {
+      const data = cv.data as any;
+      if (cv.profilePhoto && data?.personal) {
+        data.personal.photo = cv.profilePhoto;
+      }
+      return { ...cv, data };
+    });
+
+    return NextResponse.json(cvsWithPhoto);
   } catch (error) {
     console.error("Erreur lors de la récupération des CV:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
@@ -33,16 +43,28 @@ export async function POST(request: Request) {
   // Check if account is confirmed
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { emailConfirmed: true }
+    select: { emailConfirmed: true },
   });
 
   if (!user?.emailConfirmed) {
-    return NextResponse.json({ error: "Veuillez activer votre compte pour sauvegarder votre CV." }, { status: 403 });
+    return NextResponse.json(
+      { error: "Veuillez activer votre compte pour sauvegarder votre CV." },
+      { status: 403 }
+    );
   }
 
   try {
     const { id, name, data } = await request.json();
     const userId = session.user.id;
+
+    // Extract the photo from the JSON data to store it separately
+    let profilePhoto: string | null = null;
+    const dataToStore = { ...data };
+    if (dataToStore?.personal?.photo) {
+      profilePhoto = dataToStore.personal.photo;
+      // Remove photo from JSON so the column stays small and fast
+      dataToStore.personal = { ...dataToStore.personal, photo: "" };
+    }
 
     // Update User profile with basic info from CV
     if (data.personal) {
@@ -51,46 +73,65 @@ export async function POST(request: Request) {
         const userUpdateData: any = {
           address: data.personal.address,
           phone: data.personal.phone,
-          image: data.personal.photo,
+          // Store the photo URL on the user profile as well
+          image: profilePhoto ?? data.personal.photo,
         };
 
         if (!currentUser.firstName && data.personal.firstName) userUpdateData.firstName = data.personal.firstName;
         if (!currentUser.lastName && data.personal.lastName) userUpdateData.lastName = data.personal.lastName;
         if (!currentUser.name && data.personal.name) userUpdateData.name = data.personal.name;
-        if (!currentUser.birthDate && data.personal.dateOfBirth) userUpdateData.birthDate = new Date(data.personal.dateOfBirth);
-        if (!currentUser.nationality && data.personal.nationality) userUpdateData.nationality = data.personal.nationality;
+        if (!currentUser.birthDate && data.personal.dateOfBirth)
+          userUpdateData.birthDate = new Date(data.personal.dateOfBirth);
+        if (!currentUser.nationality && data.personal.nationality)
+          userUpdateData.nationality = data.personal.nationality;
 
-        await prisma.user.update({
-          where: { id: userId },
-          data: userUpdateData,
-        }).catch((err: any) => console.error("Failed to update user profile:", err));
+        await prisma.user
+          .update({ where: { id: userId }, data: userUpdateData })
+          .catch((err: any) => console.error("Failed to update user profile:", err));
       }
     }
 
     if (id) {
-      // Update existing CV
+      // Update existing CV — only update profilePhoto if a new one was provided
+      const updatePayload: any = {
+        name: name || "Mon CV",
+        data: dataToStore,
+      };
+      if (profilePhoto !== null) {
+        updatePayload.profilePhoto = profilePhoto;
+      }
+
       const updatedCv = await prisma.cV.update({
         where: { id, userId },
-        data: {
-          name: name || "Mon CV",
-          data: data,
-        },
+        data: updatePayload,
       });
-      return NextResponse.json(updatedCv);
+
+      // Re-inject photo for the response so client stays in sync
+      const responseData = updatedCv.data as any;
+      if (updatedCv.profilePhoto && responseData?.personal) {
+        responseData.personal.photo = updatedCv.profilePhoto;
+      }
+      return NextResponse.json({ ...updatedCv, data: responseData });
     } else {
       // Create new CV
       const newCv = await prisma.cV.create({
         data: {
           userId,
           name: name || "Mon CV",
-          data: data,
+          data: dataToStore,
+          profilePhoto: profilePhoto ?? undefined,
         },
       });
-      return NextResponse.json(newCv);
+
+      // Re-inject photo for the response
+      const responseData = newCv.data as any;
+      if (newCv.profilePhoto && responseData?.personal) {
+        responseData.personal.photo = newCv.profilePhoto;
+      }
+      return NextResponse.json({ ...newCv, data: responseData });
     }
   } catch (error) {
     console.error("Erreur lors de la sauvegarde du CV:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
-
