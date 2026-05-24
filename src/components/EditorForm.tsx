@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { CVData } from "@/types/cv";
 import { User, Briefcase, Code, ImagePlus, Trash2, GraduationCap, Plus, X, Globe, Folder, Award, Heart } from "lucide-react";
 import SpellingAssistant from "./SpellingAssistant";
+import GlobalSpellingAssistant from "./GlobalSpellingAssistant";
 
 interface EditorFormProps {
   cvData: CVData;
@@ -977,6 +978,12 @@ export default function EditorForm({ cvData, setCvData }: EditorFormProps) {
           </div>
         )}
       </section>
+
+      {/* Correction globale */}
+      <GlobalSpellingAssistant
+        cvData={cvData}
+        onApplyAllCorrections={(correctedData) => setCvData(correctedData)}
+      />
     </div>
   );
 }
