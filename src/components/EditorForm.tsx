@@ -3,7 +3,7 @@ import React, { useState } from "react";
 
 import { CVData } from "@/types/cv";
 import { User, Briefcase, Code, ImagePlus, Trash2, GraduationCap, Plus, X, Globe, Folder, Award, Heart } from "lucide-react";
-import SpellingAssistant from "./SpellingAssistant";
+
 import GlobalSpellingAssistant from "./GlobalSpellingAssistant";
 
 interface EditorFormProps {
@@ -397,11 +397,6 @@ export default function EditorForm({ cvData, setCvData }: EditorFormProps) {
               onChange={(e) => updatePersonal("summary", e.target.value)}
               className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-[var(--color-primary)] outline-none transition-all resize-none"
             />
-            <SpellingAssistant 
-              text={cvData.personal.summary} 
-              onApplyCorrection={(newText) => updatePersonal("summary", newText)} 
-              fieldName="summary" 
-            />
           </div>
 
           {/* Réseaux sociaux & Liens */}
@@ -636,15 +631,6 @@ export default function EditorForm({ cvData, setCvData }: EditorFormProps) {
               }}
               className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md outline-none resize-none focus:ring-2 focus:ring-[var(--color-primary)]"
             />
-            <SpellingAssistant 
-              text={exp.description} 
-              onApplyCorrection={(newText) => {
-                const newExp = [...cvData.experience];
-                newExp[index].description = newText;
-                setCvData({...cvData, experience: newExp});
-              }} 
-              fieldName={`experience-${index}`} 
-            />
           </div>
         ))}
       </section>
@@ -809,15 +795,6 @@ export default function EditorForm({ cvData, setCvData }: EditorFormProps) {
                 setCvData({...cvData, projects: newProjects});
               }}
               className="w-full px-3 py-2 text-sm bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md outline-none resize-none focus:ring-2 focus:ring-[var(--color-primary)]"
-            />
-            <SpellingAssistant 
-              text={project.description} 
-              onApplyCorrection={(newText) => {
-                const newProjects = [...(cvData.projects || [])];
-                newProjects[index].description = newText;
-                setCvData({...cvData, projects: newProjects});
-              }} 
-              fieldName={`project-${index}`} 
             />
           </div>
         ))}
