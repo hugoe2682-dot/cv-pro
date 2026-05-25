@@ -130,14 +130,12 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
   };
 
   const generateQRCodeContent = () => {
-    if (cvId && typeof window !== 'undefined') {
-      return `${window.location.origin}/cv/${cvId}`;
-    }
+    // Return vCard directly to ensure the QR code updates visually in real-time as the user types/modifies/corrects information
     return generateVCard();
   };
 
   return (
-    <div className="w-full min-h-[297mm] bg-white text-slate-800 p-10 print:p-8 flex flex-col font-sans overflow-hidden">
+    <div className="w-full min-h-[297mm] bg-white text-slate-800 p-10 print:p-8 flex flex-col font-sans overflow-hidden relative pb-20 print:pb-20">
       {/* Header */}
       <div className="border-b-2 border-[var(--color-primary)] pb-6 mb-6 flex justify-between items-start gap-6">
         <div className="flex-1">
@@ -263,15 +261,17 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
             />
           )}
 
-          {/* QR Code (Always displayed here to guarantee it is on the first page) */}
-          <div className={`w-28 h-28 bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex items-center justify-center ${name.isMock ? "opacity-40 grayscale" : ""}`}>
-            <QRCode 
-              value={generateQRCodeContent()}
-              size={96}
-              style={{ height: "auto", maxWidth: "100%", width: "100%" }}
-              viewBox={`0 0 96 96`}
-            />
-          </div>
+          {/* QR Code (Only displayed in header if there is no profile photo) */}
+          {(!cvData.personal.includePhoto || !cvData.personal.photo) && (
+            <div className={`w-28 h-28 bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex items-center justify-center ${name.isMock ? "opacity-40 grayscale" : ""}`}>
+              <QRCode 
+                value={generateQRCodeContent()}
+                size={96}
+                style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                viewBox={`0 0 96 96`}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -321,7 +321,7 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
                         {exp.title || "Poste"}
                       </h4>
                       <span className={`text-xs font-medium bg-indigo-50 px-2 py-0.5 rounded ${!hasExperience ? mockStyle + " text-slate-400" : "text-[var(--color-primary)]"}`}>
-                        {exp.startDate || "Début"} - {exp.endDate || "Fin"}
+                        {exp.startDate || "Début"} - {exp.endDate || (hasExperience ? "En cours" : "Fin")}
                       </span>
                     </div>
                     <div className={`text-sm font-medium mb-2 ${!hasExperience ? mockStyle + " text-slate-400" : "text-slate-600"}`}>
@@ -419,10 +419,20 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
               </p>
             </div>
           )}
-
-
         </div>
       </div>
+
+      {/* QR Code at the bottom-right of all pages (only when a photo is added/present) */}
+      {cvData.personal.includePhoto && cvData.personal.photo && (
+        <div className={`print:fixed absolute bottom-4 right-4 w-20 h-20 bg-white p-1 rounded-lg border border-slate-200 shadow-sm flex items-center justify-center ${name.isMock ? "opacity-40 grayscale" : ""} z-50`}>
+          <QRCode 
+            value={generateQRCodeContent()}
+            size={72}
+            style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+            viewBox={`0 0 72 72`}
+          />
+        </div>
+      )}
     </div>
   );
 }

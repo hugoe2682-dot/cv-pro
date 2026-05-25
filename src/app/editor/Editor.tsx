@@ -412,12 +412,19 @@ export default function Editor() {
       <div 
         ref={previewRef}
         id="preview-scroll-pane"
-        className="hidden md:flex w-full md:w-1/2 lg:w-7/12 h-full overflow-y-auto p-8 justify-center items-start bg-slate-100 dark:bg-slate-900 custom-scrollbar"
+        className="hidden md:flex w-full md:w-1/2 lg:w-7/12 h-full overflow-y-auto p-8 justify-center items-start bg-slate-100 dark:bg-slate-900 custom-scrollbar print:hidden"
       >
-        <div className="w-full max-w-[210mm] shadow-2xl rounded-sm overflow-hidden bg-white print:shadow-none print:w-[210mm] print:h-[297mm] mb-[20vh]">
-          <div ref={contentRef}>
+        <div className="w-full max-w-[210mm] shadow-2xl rounded-sm overflow-hidden bg-white mb-[20vh]">
+          <div>
             <CVPreview cvData={cvData} showExamples={showExamples} cvId={cvId} />
           </div>
+        </div>
+      </div>
+
+      {/* Print-only container to ensure reliable PDF generation on all devices (including mobile) */}
+      <div className="hidden print:block">
+        <div ref={contentRef} className="w-[210mm] min-h-[297mm] bg-white print:p-0">
+          <CVPreview cvData={cvData} showExamples={showExamples} cvId={cvId} />
         </div>
       </div>
     </div>
