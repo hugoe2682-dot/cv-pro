@@ -77,6 +77,84 @@ export async function PATCH(request: Request) {
       data: updateData,
     });
 
+    // Automatically sync newly filled profile details directly to any existing CVs
+    try {
+      const userCvs = await prisma.cV.findMany({
+        where: { userId },
+      });
+
+      if (userCvs.length > 0) {
+        const formatDateToDDMMYYYY = (dateVal: Date | string | null | undefined) => {
+          if (!dateVal) return "";
+          const d = new Date(dateVal);
+          if (isNaN(d.getTime())) return "";
+          const day = d.getDate().toString().padStart(2, '0');
+          const month = (d.getMonth() + 1).toString().padStart(2, '0');
+          return `${day}/${month}/${d.getFullYear()}`;
+        };
+
+        for (const cv of userCvs) {
+          const cvData = (cv.data as any) || {};
+          if (!cvData.personal) {
+            cvData.personal = {};
+          }
+
+          let hasChanges = false;
+
+          if (!cvData.personal.firstName && updatedUser.firstName) {
+            cvData.personal.firstName = updatedUser.firstName;
+            hasChanges = true;
+          }
+          if (!cvData.personal.lastName && updatedUser.lastName) {
+            cvData.personal.lastName = updatedUser.lastName;
+            hasChanges = true;
+          }
+          if (hasChanges || !cvData.personal.name) {
+            cvData.personal.name = `${cvData.personal.firstName || ""} ${cvData.personal.lastName || ""}`.trim();
+            hasChanges = true;
+          }
+          if (!cvData.personal.email && updatedUser.email) {
+            cvData.personal.email = updatedUser.email;
+            hasChanges = true;
+          }
+          if (!cvData.personal.phone && updatedUser.phone) {
+            cvData.personal.phone = updatedUser.phone;
+            hasChanges = true;
+          }
+          if (!cvData.personal.address && updatedUser.address) {
+            cvData.personal.address = updatedUser.address;
+            hasChanges = true;
+          }
+          if (!cvData.personal.nationality && updatedUser.nationality) {
+            cvData.personal.nationality = updatedUser.nationality;
+            hasChanges = true;
+          }
+          if (!cvData.personal.dateOfBirth && updatedUser.birthDate) {
+            cvData.personal.dateOfBirth = formatDateToDDMMYYYY(updatedUser.birthDate);
+            hasChanges = true;
+          }
+
+          const updatePayload: any = {};
+          if (hasChanges) {
+            updatePayload.data = cvData;
+          }
+          // If CV doesn't have a profile photo yet, sync from the user profile
+          if (!cv.profilePhoto && updatedUser.image) {
+            updatePayload.profilePhoto = updatedUser.image;
+          }
+
+          if (Object.keys(updatePayload).length > 0) {
+            await prisma.cV.update({
+              where: { id: cv.id },
+              data: updatePayload,
+            });
+          }
+        }
+      }
+    } catch (cvSyncError) {
+      console.error("Erreur lors de la synchronisation du CV avec le profil :", cvSyncError);
+    }
+
     return NextResponse.json(updatedUser);
   } catch (error) {
     console.error("Erreur lors de la mise à jour de l'utilisateur:", error);
