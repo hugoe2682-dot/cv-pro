@@ -63,7 +63,10 @@ export default function Editor() {
     }
   };
 
-  const reactToPrintFn = useReactToPrint({ contentRef });
+  const handleDownloadPDF = () => {
+    localStorage.setItem("cvDataPrint", JSON.stringify(cvData));
+    window.open("/editor/print", "_blank");
+  };
   
 
 
@@ -387,7 +390,7 @@ export default function Editor() {
               {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
             </button>
             <button 
-              onClick={() => reactToPrintFn()}
+              onClick={handleDownloadPDF}
               className="flex items-center gap-2 px-4 py-2 bg-[var(--color-primary)] text-white text-sm font-medium rounded-full hover:bg-[var(--color-primary-hover)] transition-all shadow-md"
             >
               <Download size={16} />
@@ -397,6 +400,16 @@ export default function Editor() {
         </div>
         
         <EditorForm cvData={cvData} setCvData={handleSetCvData} />
+
+        {/* Mobile-only preview shown at the bottom of the editor scroll pane, below the spelling correction assistant */}
+        <div className="block md:hidden mt-8 border-t border-slate-200 dark:border-slate-800 pt-8 pb-16">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4 text-center">Aperçu du CV</h2>
+          <div className="w-full overflow-x-auto pb-4 scrollbar-thin">
+            <div className="w-[210mm] mx-auto shadow-xl rounded-sm overflow-hidden bg-white">
+              <CVPreview cvData={cvData} showExamples={showExamples} cvId={cvId} />
+            </div>
+          </div>
+        </div>
       </div>
 
       <Modal

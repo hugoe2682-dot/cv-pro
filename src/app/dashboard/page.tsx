@@ -42,7 +42,12 @@ export default function DashboardPage() {
   const [isCopied, setIsCopied] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const reactToPrintFn = useReactToPrint({ contentRef });
+  const handleDownloadPDF = () => {
+    if (cvData) {
+      localStorage.setItem("cvDataPrint", JSON.stringify(cvData));
+      window.open("/editor/print", "_blank");
+    }
+  };
 
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -657,7 +662,7 @@ export default function DashboardPage() {
                 <div className="flex flex-wrap items-center gap-3">
                   {/* Print / Download Button */}
                   <button
-                    onClick={() => reactToPrintFn()}
+                    onClick={handleDownloadPDF}
                     className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 active:scale-95 cursor-pointer"
                   >
                     <Download size={16} />

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
+import MainWrapper from "@/components/MainWrapper";
 import AuthProvider from "@/components/AuthProvider";
 import { Analytics } from "@vercel/analytics/react";
 // import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -23,9 +24,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-sans">
         <AuthProvider>
           <Navbar />
-          <main className="flex-1 flex flex-col pt-16">
+          <MainWrapper>
             {children}
-          </main>
+          </MainWrapper>
           {/* <SpeedInsights /> */}
           <Analytics />
         </AuthProvider>

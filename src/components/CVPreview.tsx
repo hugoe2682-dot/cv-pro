@@ -135,7 +135,7 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
   };
 
   return (
-    <div className="w-full min-h-[297mm] bg-white text-slate-800 p-10 print:p-8 flex flex-col font-sans overflow-hidden relative pb-20 print:pb-20">
+    <div className="w-full min-h-[297mm] bg-white text-slate-800 p-10 print:p-8 flex flex-col font-sans overflow-visible relative pb-20 print:pb-20">
       {/* Header */}
       <div className="border-b-2 border-[var(--color-primary)] pb-6 mb-6 flex justify-between items-start gap-6">
         <div className="flex-1">

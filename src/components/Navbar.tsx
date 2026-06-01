@@ -67,7 +67,8 @@ export default function Navbar() {
   }, [lastScrollY]);
 
   // ✅ Les retours conditionnels après tous les hooks
-
+  // Masquer complètement la navbar sur la page d'impression PDF
+  if (pathname === "/editor/print") return null;
 
   return (
     <>

@@ -216,7 +216,7 @@ export default function EditorForm({ cvData, setCvData }: EditorFormProps) {
   };
 
   return (
-    <div className="space-y-8 pb-20">
+    <div className="space-y-8 pb-6 md:pb-20">
       {/* Informations Personnelles */}
       <section className="space-y-4">
         <div className="flex items-center gap-2 text-[var(--color-primary)] border-b border-slate-200 dark:border-slate-800 pb-2">
