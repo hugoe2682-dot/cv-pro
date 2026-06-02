@@ -38,6 +38,8 @@ const MOCK_DATA = {
 };
 
 export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: { cvData: CVData, showExamples?: boolean, cvId?: string | null, isPublicView?: boolean }) {
+  const primaryColor = cvData.themeColor || "#6366f1";
+
   const getVal = (val: string | undefined, mock: string) => {
     if (val && val.trim() !== "") return { value: val, isMock: false };
     return { value: showExamples ? mock : "", isMock: true };
@@ -135,7 +137,10 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
   };
 
   return (
-    <div className="w-full min-h-[297mm] bg-white text-slate-800 p-10 print:p-8 flex flex-col font-sans overflow-visible relative pb-20 print:pb-20">
+    <div 
+      style={{ "--color-primary": primaryColor } as React.CSSProperties}
+      className="w-full min-h-[297mm] bg-white text-slate-800 p-10 print:p-8 flex flex-col font-sans overflow-visible relative pb-20 print:pb-20"
+    >
       {/* Header */}
       <div className="border-b-2 border-[var(--color-primary)] pb-6 mb-6 flex justify-between items-start gap-6">
         <div className="flex-1">
@@ -297,7 +302,10 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
                       <h4 className={`font-bold ${!hasEducation ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
                         {edu.degree || "Nom du diplôme"}
                       </h4>
-                      <span className={`text-xs font-medium bg-indigo-50 px-2 py-0.5 rounded ${!hasEducation ? mockStyle + " text-slate-400" : "text-[var(--color-primary)]"}`}>
+                      <span 
+                        style={hasEducation ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
+                        className={`text-xs font-medium px-2 py-0.5 rounded ${!hasEducation ? mockStyle + " text-slate-400" : ""}`}
+                      >
                         {edu.startDate || "Début"} - {edu.endDate || "Fin"}
                       </span>
                     </div>
@@ -320,7 +328,10 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
                       <h4 className={`font-bold ${!hasExperience ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
                         {exp.title || "Poste"}
                       </h4>
-                      <span className={`text-xs font-medium bg-indigo-50 px-2 py-0.5 rounded ${!hasExperience ? mockStyle + " text-slate-400" : "text-[var(--color-primary)]"}`}>
+                      <span 
+                        style={hasExperience ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
+                        className={`text-xs font-medium px-2 py-0.5 rounded ${!hasExperience ? mockStyle + " text-slate-400" : ""}`}
+                      >
                         {exp.startDate || "Début"} - {exp.endDate || (hasExperience ? "En cours" : "Fin")}
                       </span>
                     </div>
@@ -346,7 +357,10 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
                       <h4 className={`font-bold ${!hasProjects ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
                         {project.title || "Titre du projet"}
                       </h4>
-                      <span className={`text-xs font-medium bg-indigo-50 px-2 py-0.5 rounded ${!hasProjects ? mockStyle + " text-slate-400" : "text-[var(--color-primary)]"}`}>
+                      <span 
+                        style={hasProjects ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
+                        className={`text-xs font-medium px-2 py-0.5 rounded ${!hasProjects ? mockStyle + " text-slate-400" : ""}`}
+                      >
                         {project.date || "Date"}
                       </span>
                     </div>
@@ -384,7 +398,10 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
                     <span className={`font-medium ${!hasLanguages ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
                       {lang.name || "Langue"}
                     </span>
-                    <span className={`text-xs font-medium bg-indigo-50 px-2 py-0.5 rounded ${!hasLanguages ? mockStyle + " text-slate-400" : "text-[var(--color-primary)]"}`}>
+                    <span 
+                      style={hasLanguages ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
+                      className={`text-xs font-medium px-2 py-0.5 rounded ${!hasLanguages ? mockStyle + " text-slate-400" : ""}`}
+                    >
                       {lang.level || "Niveau"}
                     </span>
                   </div>

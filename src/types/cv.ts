@@ -1,4 +1,5 @@
 export type CVData = {
+  themeColor?: string;
   personal: {
     firstName: string;
     lastName: string;
@@ -57,6 +58,7 @@ export type CVData = {
 };
 
 export const defaultCVData: CVData = {
+  themeColor: "#6366f1",
   personal: {
     firstName: "",
     lastName: "",

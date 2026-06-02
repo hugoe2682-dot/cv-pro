@@ -24,13 +24,18 @@ import {
   X,
   CheckCircle2,
   Download,
-  ExternalLink
+  ExternalLink,
+  Palette,
+  Printer,
+  Copy,
+  Globe
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingScreen from "@/components/LoadingScreen";
 import Modal from "@/components/Modal";
 import { useReactToPrint } from "react-to-print";
 import CVPreview from "@/components/CVPreview";
+import QRCode from "react-qr-code";
 
 export default function DashboardPage() {
   const { user, session, status } = useAuth();
@@ -40,7 +45,39 @@ export default function DashboardPage() {
   const [cvData, setCvData] = useState<any>(null);
   const [isCvPreviewOpen, setIsCvPreviewOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isColorBarOpen, setIsColorBarOpen] = useState(false);
+  const [isBusinessCardOpen, setIsBusinessCardOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  const handleColorChange = async (color: string) => {
+    if (!cvData) return;
+    const updatedCv = {
+      ...cvData,
+      themeColor: color,
+    };
+    setCvData(updatedCv);
+    
+    // Save to local storage for print
+    localStorage.setItem("cvDataPrint", JSON.stringify(updatedCv));
+    localStorage.setItem("cvData", JSON.stringify(updatedCv));
+
+    // Save to server
+    if (status === "authenticated" && userData?.emailConfirmed && cvId) {
+      try {
+        await fetch("/api/cv", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: cvId,
+            data: updatedCv,
+            name: updatedCv.personal.name || "Mon CV",
+          }),
+        });
+      } catch (error) {
+        console.error("Erreur lors de la sauvegarde de la couleur:", error);
+      }
+    }
+  };
 
   const handleDownloadPDF = () => {
     if (cvData) {
@@ -660,6 +697,83 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-3">
+                   {/* Color Selector Button & Bar */}
+                   <div className="relative">
+                     <button
+                       onClick={() => setIsColorBarOpen(!isColorBarOpen)}
+                       className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold rounded-xl transition-all active:scale-95 cursor-pointer"
+                     >
+                       <Palette size={16} style={{ color: cvData?.themeColor || '#6366f1' }} />
+                       Changer la couleur
+                     </button>
+
+                     {isColorBarOpen && (
+                       <div
+                         className="absolute top-full mt-2 right-0 z-[999] bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-2xl backdrop-blur-xl flex flex-col gap-3 min-w-[280px]"
+                       >
+                         <div className="flex items-center justify-between text-xs font-black text-slate-400 uppercase tracking-wider pb-2 border-b border-slate-800/50">
+                           <span>Couleur du CV</span>
+                           <button 
+                             onClick={() => setIsColorBarOpen(false)}
+                             className="text-slate-500 hover:text-slate-300 transition-colors"
+                           >
+                             <X size={14} />
+                           </button>
+                         </div>
+                         
+                         {/* Preset Colors */}
+                         <div className="flex flex-wrap gap-2.5 justify-center py-1">
+                           {[
+                             { name: "Violet (Défaut)", value: "#6366f1" },
+                             { name: "Bleu Royal", value: "#2563eb" },
+                             { name: "Bleu Ciel", value: "#0284c7" },
+                             { name: "Vert Émeraude", value: "#10b981" },
+                             { name: "Ambre Doré", value: "#d97706" },
+                             { name: "Rose Intense", value: "#e11d48" },
+                             { name: "Sombre", value: "#0f172a" },
+                           ].map((color) => {
+                             const isSelected = (cvData?.themeColor || "#6366f1") === color.value;
+                             return (
+                               <button
+                                 key={color.value}
+                                 onClick={() => handleColorChange(color.value)}
+                                 className={`w-7 h-7 rounded-full transition-transform active:scale-90 relative hover:scale-110 cursor-pointer`}
+                                 style={{ backgroundColor: color.value }}
+                                 title={color.name}
+                               >
+                                 {isSelected && (
+                                   <span className="absolute inset-0 m-auto w-2.5 h-2.5 bg-white rounded-full shadow-sm" />
+                                 )}
+                               </button>
+                             );
+                           })}
+                           
+                           {/* Custom Color Input */}
+                           <label 
+                             className="w-7 h-7 rounded-full cursor-pointer transition-transform hover:scale-110 active:scale-90 flex items-center justify-center border border-dashed border-slate-600 hover:border-slate-400 bg-slate-850 relative group"
+                             title="Couleur personnalisée"
+                           >
+                             <input 
+                               type="color" 
+                               value={cvData?.themeColor || "#6366f1"}
+                               onChange={(e) => handleColorChange(e.target.value)}
+                               className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                             />
+                             <span className="text-xs">🎨</span>
+                             {![
+                               "#6366f1", "#2563eb", "#0284c7", "#10b981", "#d97706", "#e11d48", "#0f172a"
+                             ].includes(cvData?.themeColor || "#6366f1") && (
+                               <span 
+                                 className="absolute -inset-0.5 rounded-full border-2 border-white pointer-events-none"
+                                 style={{ borderColor: cvData?.themeColor }}
+                               />
+                             )}
+                           </label>
+                         </div>
+                       </div>
+                     )}
+                   </div>
+
                   {/* Print / Download Button */}
                   <button
                     onClick={handleDownloadPDF}
@@ -678,32 +792,13 @@ export default function DashboardPage() {
                     Modifier le CV
                   </button>
 
-                  {/* Copy Link Button */}
+                  {/* Generate Business Card Button */}
                   <button
-                    onClick={() => {
-                      if (cvId) {
-                        navigator.clipboard.writeText(`${window.location.origin}/cv/${cvId}`);
-                        setIsCopied(true);
-                        setTimeout(() => setIsCopied(false), 2000);
-                      }
-                    }}
-                    className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold rounded-xl transition-all active:scale-95 cursor-pointer ${
-                      isCopied 
-                        ? "bg-emerald-600 text-white" 
-                        : "bg-slate-800 hover:bg-slate-700 text-slate-200"
-                    }`}
+                    onClick={() => setIsBusinessCardOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold rounded-xl transition-all active:scale-95 cursor-pointer shadow-lg shadow-indigo-500/5"
                   >
-                    {isCopied ? (
-                      <>
-                        <CheckCircle2 size={16} />
-                        Lien Copié !
-                      </>
-                    ) : (
-                      <>
-                        <QrCode size={16} />
-                        Copier lien public
-                      </>
-                    )}
+                    <QrCode size={16} />
+                    Générer Carte de Visite
                   </button>
 
                   {/* Public Page Button */}
@@ -740,6 +835,268 @@ export default function DashboardPage() {
                     <CVPreview cvData={cvData} cvId={cvId} />
                   </div>
                 </motion.div>
+              </div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Business Card Modal */}
+        <AnimatePresence>
+          {isBusinessCardOpen && cvData && cvId && (
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl overflow-y-auto">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="bg-slate-900 border border-slate-800 text-white rounded-[3rem] p-8 md:p-12 max-w-4xl w-full shadow-2xl relative flex flex-col gap-8 no-print"
+              >
+                {/* Close Button */}
+                <button 
+                  onClick={() => setIsBusinessCardOpen(false)}
+                  className="absolute top-8 right-8 p-3 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
+                >
+                  <X size={20} />
+                </button>
+
+                <div className="text-center md:text-left">
+                  <h2 className="text-3xl font-black tracking-tight text-white flex items-center gap-3 justify-center md:justify-start">
+                    <QrCode className="text-[var(--color-primary)]" style={{ color: cvData.themeColor || '#6366f1' }} size={32} />
+                    Votre Carte de Visite Digitale
+                  </h2>
+                  <p className="text-slate-400 mt-2">Votre profil professionnel au format de poche avec QR Code intégré.</p>
+                </div>
+
+                {/* Theme Selector for the card inside modal */}
+                <div className="flex flex-col md:flex-row items-stretch gap-8 mt-2">
+                  {/* Visual Cards Container */}
+                  <div className="flex-1 flex items-center justify-center p-4">
+                    
+                    {/* BUSINESS CARD — WHITE / BLACK BORDER */}
+                    <div 
+                      className="w-full max-w-[500px] h-[285px] rounded-2xl bg-white border-2 border-black p-7 flex items-stretch justify-between gap-6 shadow-2xl select-none relative overflow-hidden"
+                    >
+                      {/* Subtle accent line at top using theme color */}
+                      <div 
+                        className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
+                        style={{ backgroundColor: cvData.themeColor || '#6366f1' }}
+                      />
+
+                      {/* Left Side */}
+                      <div className="flex-1 flex flex-col justify-between overflow-hidden">
+
+                        {/* Logo + Brand */}
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-white text-xs shadow-sm flex-shrink-0"
+                            style={{ backgroundColor: cvData.themeColor || '#6366f1' }}
+                          >
+                            <FileText size={14} />
+                          </div>
+                          <div className="flex flex-col leading-none">
+                            <div>
+                              <span className="font-black text-sm text-black tracking-tight">CV</span>
+                              <span className="font-black text-sm tracking-tight" style={{ color: cvData.themeColor || '#6366f1' }}>PRO</span>
+                            </div>
+                            <span className="text-[8px] text-gray-400 font-medium tracking-tight mt-0.5">cv-pro-creation.vercel.app</span>
+                          </div>
+                        </div>
+
+                        {/* Name & Job Title */}
+                        <div className="mt-3">
+                          <h3 className="text-xl font-black tracking-tight text-black uppercase leading-tight truncate">
+                            {cvData.personal.name || "VOTRE NOM"}
+                          </h3>
+                          <p 
+                            className="text-xs font-bold uppercase tracking-widest mt-1 truncate"
+                            style={{ color: cvData.themeColor || '#6366f1' }}
+                          >
+                            {cvData.personal.jobTitle || "Votre Poste"}
+                          </p>
+                        </div>
+
+                        {/* Contact Info */}
+                        <div className="mt-auto pt-3 border-t border-gray-200 space-y-1.5 text-[11px] text-gray-600">
+                          {cvData.personal.phone && (
+                            <div className="flex items-center gap-2 truncate">
+                              <Phone size={10} style={{ color: cvData.themeColor || '#6366f1', flexShrink: 0 }} />
+                              <span className="truncate">{cvData.personal.phone}</span>
+                            </div>
+                          )}
+                          {cvData.personal.email && (
+                            <div className="flex items-center gap-2 truncate">
+                              <Mail size={10} style={{ color: cvData.themeColor || '#6366f1', flexShrink: 0 }} />
+                              <span className="truncate">{cvData.personal.email}</span>
+                            </div>
+                          )}
+                          {cvData.personal.website && (
+                            <div className="flex items-center gap-2 truncate">
+                              <Globe size={10} style={{ color: cvData.themeColor || '#6366f1', flexShrink: 0 }} />
+                              <span className="truncate">{cvData.personal.website}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right Side: QR Code */}
+                      <div className="flex flex-col items-center justify-center gap-2 flex-shrink-0">
+                        <div 
+                          className="p-2 rounded-xl border-2"
+                          style={{ borderColor: cvData.themeColor || '#6366f1' }}
+                        >
+                          <QRCode 
+                            value={`${window.location.origin}/cv/${cvId}`}
+                            size={110}
+                            fgColor="#000000"
+                            bgColor="#ffffff"
+                            style={{ height: "auto", maxWidth: "100%", width: "110px", display: "block" }}
+                            viewBox="0 0 110 110"
+                          />
+                        </div>
+                        <span 
+                          className="text-[9px] font-black uppercase tracking-widest"
+                          style={{ color: cvData.themeColor || '#6366f1' }}
+                        >
+                          SCAN ME
+                        </span>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  {/* Actions Column */}
+                  <div className="w-full md:w-[260px] flex flex-col gap-4 justify-center">
+                    <button
+                      onClick={() => window.print()}
+                      className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/10 active:scale-95 transition-all flex items-center justify-center gap-2.5 cursor-pointer border-none"
+                    >
+                      <Printer size={18} />
+                      Imprimer la carte
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/cv/${cvId}`);
+                        setIsCopied(true);
+                        setTimeout(() => setIsCopied(false), 2000);
+                      }}
+                      className={`w-full py-4 font-black rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2.5 cursor-pointer border-none ${
+                        isCopied 
+                          ? "bg-emerald-600 text-white" 
+                          : "bg-slate-800 hover:bg-slate-700 text-slate-200"
+                      }`}
+                    >
+                      {isCopied ? (
+                        <>
+                          <CheckCircle2 size={18} />
+                          Lien Copié !
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={18} />
+                          Copier lien public
+                        </>
+                      )}
+                    </button>
+
+                    <p className="text-slate-500 text-xs text-center leading-relaxed">
+                      L'impression génère une mise en page optimisée prête à découper (85mm x 55mm).
+                    </p>
+                  </div>
+                </div>
+
+              </motion.div>
+
+              {/* Print-only layout for the business card */}
+              <div className="hidden print:block absolute inset-0 bg-white z-[9999] p-10">
+                <style dangerouslySetInnerHTML={{ __html: `
+                  @page {
+                    size: A4 portrait;
+                    margin: 20mm;
+                  }
+                  @media print {
+                    body * {
+                      visibility: hidden !important;
+                    }
+                    .print-card-container, .print-card-container * {
+                      visibility: visible !important;
+                    }
+                    .print-card-container {
+                      position: absolute !important;
+                      left: 0 !important;
+                      top: 0 !important;
+                      width: 100% !important;
+                      display: flex !important;
+                      flex-direction: column !important;
+                      gap: 15mm !important;
+                      align-items: center !important;
+                      justify-content: center !important;
+                      height: 100% !important;
+                    }
+                    .no-print {
+                      display: none !important;
+                    }
+                  }
+                `}} />
+                
+                <div className="print-card-container flex flex-col items-center justify-center bg-white h-screen">
+                  {/* PRINT CARD — WHITE / BLACK BORDER */}
+                  <div 
+                    style={{ border: '2px solid #000000', width: '85mm', height: '55mm', padding: '0', display: 'flex', alignItems: 'stretch', borderRadius: '3mm', background: '#ffffff', color: '#0f172a', boxSizing: 'border-box', overflow: 'hidden', position: 'relative' }}
+                  >
+                    {/* Theme accent top bar */}
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1.5mm', backgroundColor: cvData.themeColor || '#6366f1' }} />
+
+                    {/* Left Content */}
+                    <div style={{ flex: 1, padding: '5mm 4mm 4mm 5mm', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden' }}>
+                      {/* Logo */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '2mm', marginTop: '1mm' }}>
+                        <div style={{ width: '6mm', height: '6mm', borderRadius: '1.5mm', backgroundColor: cvData.themeColor || '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <span style={{ color: '#fff', fontSize: '8px', fontWeight: 900, lineHeight: 1 }}>CV</span>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+                          <div style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '-0.02em' }}>
+                            <span style={{ color: '#000' }}>CV</span><span style={{ color: cvData.themeColor || '#6366f1' }}>PRO</span>
+                          </div>
+                          <div style={{ fontSize: '5.5px', color: '#9ca3af', fontWeight: 500, marginTop: '0.5mm', letterSpacing: '0em' }}>cv-pro-creation.vercel.app</div>
+                        </div>
+                      </div>
+
+                      {/* Name & Title */}
+                      <div style={{ marginTop: '2mm' }}>
+                        <div style={{ fontSize: '14px', fontWeight: 900, color: '#000000', textTransform: 'uppercase', lineHeight: 1.15, letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {cvData.personal.name || 'VOTRE NOM'}
+                        </div>
+                        <div style={{ fontSize: '8px', fontWeight: 700, color: cvData.themeColor || '#6366f1', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '1mm', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {cvData.personal.jobTitle || 'Votre Poste'}
+                        </div>
+                      </div>
+
+                      {/* Contact */}
+                      <div style={{ borderTop: '0.5pt solid #d1d5db', paddingTop: '2mm', display: 'flex', flexDirection: 'column', gap: '1mm', fontSize: '7.5px', color: '#374151' }}>
+                        {cvData.personal.phone && <div>📞 {cvData.personal.phone}</div>}
+                        {cvData.personal.email && <div style={{ wordBreak: 'break-all' }}>✉️ {cvData.personal.email}</div>}
+                        {cvData.personal.website && <div style={{ wordBreak: 'break-all' }}>🌐 {cvData.personal.website}</div>}
+                      </div>
+                    </div>
+
+                    {/* Right: QR Code */}
+                    <div style={{ width: '38mm', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5mm', borderLeft: '1pt solid #e5e7eb', padding: '4mm 3mm' }}>
+                      <div style={{ border: `2pt solid ${cvData.themeColor || '#6366f1'}`, padding: '1mm', borderRadius: '2mm', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <QRCode 
+                          value={`${window.location.origin}/cv/${cvId}`}
+                          size={95}
+                          fgColor="#000000"
+                          bgColor="#ffffff"
+                          style={{ height: 'auto', maxWidth: '100%', width: '27mm', display: 'block' }}
+                          viewBox="0 0 95 95"
+                        />
+                      </div>
+                      <div style={{ fontSize: '6px', fontWeight: 900, letterSpacing: '0.1em', color: cvData.themeColor || '#6366f1', textAlign: 'center' }}>SCAN ME</div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           )}
