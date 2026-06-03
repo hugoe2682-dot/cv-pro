@@ -5,11 +5,18 @@ import { Metadata } from "next";
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const cv = await prisma.cV.findUnique({
-    where: { id: params.id },
-    include: { user: true }
+    where: { id: params.id }
   });
 
-  if (!cv || !cv.user.emailConfirmed) {
+  if (!cv) {
+    return { title: "CV non trouvé" };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: cv.userId }
+  });
+
+  if (!user || !user.emailConfirmed) {
     return { title: "CV non trouvé" };
   }
 
@@ -21,12 +28,19 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 
 export default async function PublicCVPage({ params }: { params: { id: string } }) {
   const cv = await prisma.cV.findUnique({
-    where: { id: params.id },
-    include: { user: true }
+    where: { id: params.id }
   });
 
-  // Block access if CV doesn't exist OR user is not confirmed
-  if (!cv || !cv.user.emailConfirmed) {
+  if (!cv) {
+    notFound();
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: cv.userId }
+  });
+
+  // Block access if user doesn't exist OR user is not confirmed
+  if (!user || !user.emailConfirmed) {
     notFound();
   }
 
