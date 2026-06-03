@@ -1,6 +1,7 @@
 import { CVData } from "@/types/cv";
 import { Mail, Phone, MapPin, Calendar, Globe, MessageCircle, Link as LinkIcon, Briefcase, Users, Camera, Video } from "lucide-react";
 import QRCode from "react-qr-code";
+import { generateVCard } from "@/lib/vcard";
 
 const MOCK_DATA = {
   name: "ex: JEAN DUPONT",
@@ -84,56 +85,9 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
 
   const mockStyle = "opacity-40 italic font-light";
 
-  const generateVCard = () => {
-    let vcard = `BEGIN:VCARD\nVERSION:3.0\nN:${name.value}\nFN:${name.value}\nTITLE:${jobTitle.value}\nBDAY:${dob.value.replace(/\//g, "-")}\nEMAIL:${email.value}\nTEL:${phone.value}\nADR:;;${address.value}`;
-    
-    let note = "";
-    if (summary.value) note += `Profil: ${summary.value}\\n\\n`;
-    
-    if (education.length > 0) {
-      note += `Formations:\\n`;
-      education.forEach((edu: any) => {
-        note += `- ${edu.degree || 'Diplôme'} (${edu.startDate || ''}-${edu.endDate || ''}) @ ${edu.school || ''}\\n`;
-      });
-      note += `\\n`;
-    }
-    
-    if (experience.length > 0) {
-      note += `Expériences:\\n`;
-      experience.forEach((exp: any) => {
-        note += `- ${exp.title || 'Poste'} (${exp.startDate || ''}-${exp.endDate || ''}) @ ${exp.company || ''}\\n`;
-      });
-      note += `\\n`;
-    }
-
-    if (skills.length > 0) {
-      note += `Compétences: ${skills.join(", ")}\\n\\n`;
-    }
-
-    if (languages.length > 0) {
-      note += `Langues:\\n`;
-      languages.forEach((lang: any) => {
-        note += `- ${lang.name || ''} (${lang.level || ''})\\n`;
-      });
-      note += `\\n`;
-    }
-
-    if (note) {
-      // Nettoyer les vrais sauts de ligne dans le résumé pour éviter de casser le vCard
-      const cleanNote = note.replace(/\n/g, " ");
-      vcard += `\nNOTE:${cleanNote}`;
-    }
-    
-    if (linkedin.value && !linkedin.isMock) vcard += `\nURL;type=LinkedIn:${linkedin.value}`;
-    if (website.value && !website.isMock) vcard += `\nURL;type=Website:${website.value}`;
-    
-    vcard += `\nEND:VCARD`;
-    return vcard;
-  };
-
   const generateQRCodeContent = () => {
     // Return vCard directly to ensure the QR code updates visually in real-time as the user types/modifies/corrects information
-    return generateVCard();
+    return generateVCard(cvData, showExamples);
   };
 
   return (

@@ -226,17 +226,72 @@ export default function Editor() {
     setModalConfig({
       isOpen: true,
       title: "Réinitialiser le CV",
-      message: "Voulez-vous vraiment réinitialiser tout le CV ? Toutes les données non sauvegardées seront perdues.",
+      message: "Voulez-vous vraiment réinitialiser le CV ? Vos sections (expériences, formations, etc.) seront vidées, mais vos informations personnelles et celles de votre profil seront importées et conservées.",
       type: "danger",
       confirmText: "Réinitialiser",
-      onConfirm: () => {
-        setCvData(defaultCVData);
-        setCvId(null);
-        setIsDirty(true);
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("cvData");
-        }
+      onConfirm: async () => {
         closeModal();
+        setIsSaving(true);
+        try {
+          let personalInfo = { ...cvData.personal };
+
+          if (status === "authenticated") {
+            try {
+              const userRes = await fetch("/api/user");
+              if (userRes.ok) {
+                const userData = await userRes.json();
+                let formattedDOB = "";
+                if (userData.birthDate) {
+                  const d = new Date(userData.birthDate);
+                  const day = d.getDate().toString().padStart(2, '0');
+                  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                  formattedDOB = `${day}/${month}/${d.getFullYear()}`;
+                }
+
+                personalInfo = {
+                  firstName: userData.firstName || cvData.personal.firstName || "",
+                  lastName: userData.lastName || cvData.personal.lastName || "",
+                  name: (`${userData.firstName || ""} ${userData.lastName || ""}`.trim()) || cvData.personal.name || "",
+                  email: userData.email || cvData.personal.email || "",
+                  phone: userData.phone || cvData.personal.phone || "",
+                  address: userData.address || cvData.personal.address || "",
+                  nationality: userData.nationality || cvData.personal.nationality || "",
+                  dateOfBirth: formattedDOB || cvData.personal.dateOfBirth || "",
+                  photo: userData.image || cvData.personal.photo || "",
+                  includePhoto: !!(userData.image || cvData.personal.photo),
+                  jobTitle: cvData.personal.jobTitle || "",
+                  summary: cvData.personal.summary || "",
+                  facebook: cvData.personal.facebook || "",
+                  instagram: cvData.personal.instagram || "",
+                  website: cvData.personal.website || "",
+                  youtube: cvData.personal.youtube || "",
+                  whatsapp: cvData.personal.whatsapp || "",
+                  linkedin: cvData.personal.linkedin || "",
+                  indeed: cvData.personal.indeed || "",
+                };
+              }
+            } catch (err) {
+              console.error("Erreur lors de la récupération des données de profil:", err);
+            }
+          }
+
+          const resetData: CVData = {
+            ...defaultCVData,
+            themeColor: cvData.themeColor || defaultCVData.themeColor,
+            personal: personalInfo,
+          };
+
+          setCvData(resetData);
+          setIsDirty(true);
+          
+          if (typeof window !== "undefined") {
+            localStorage.setItem("cvData", JSON.stringify(resetData));
+          }
+        } catch (e) {
+          console.error("Erreur lors du reset:", e);
+        } finally {
+          setIsSaving(false);
+        }
       }
     });
   };

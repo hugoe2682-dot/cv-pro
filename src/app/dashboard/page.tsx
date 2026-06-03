@@ -36,6 +36,7 @@ import Modal from "@/components/Modal";
 import { useReactToPrint } from "react-to-print";
 import CVPreview from "@/components/CVPreview";
 import QRCode from "react-qr-code";
+import { generateVCard } from "@/lib/vcard";
 
 export default function DashboardPage() {
   const { user, session, status } = useAuth();
@@ -944,7 +945,7 @@ export default function DashboardPage() {
                           style={{ borderColor: cvData.themeColor || '#6366f1' }}
                         >
                           <QRCode 
-                            value={`${window.location.origin}/cv/${cvId}`}
+                            value={generateVCard(cvData)}
                             size={110}
                             fgColor="#000000"
                             bgColor="#ffffff"
@@ -1084,7 +1085,7 @@ export default function DashboardPage() {
                     <div style={{ width: '38mm', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5mm', borderLeft: '1pt solid #e5e7eb', padding: '4mm 3mm' }}>
                       <div style={{ border: `2pt solid ${cvData.themeColor || '#6366f1'}`, padding: '1mm', borderRadius: '2mm', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <QRCode 
-                          value={`${window.location.origin}/cv/${cvId}`}
+                          value={generateVCard(cvData)}
                           size={95}
                           fgColor="#000000"
                           bgColor="#ffffff"
