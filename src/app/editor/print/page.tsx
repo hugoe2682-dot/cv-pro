@@ -51,17 +51,35 @@ export default function PrintPage() {
 
         /* Masquer TOUT sauf le CV lors de l'impression */
         @media print {
-          html, body {
+          html, body, main {
             width: 210mm !important;
+            height: auto !important;
+            min-height: 0 !important;
             margin: 0 !important;
             padding: 0 !important;
             background: white !important;
+            display: block !important;
             overflow: visible !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
 
+          /* Force le conteneur principal à être en bloc sans flexbox */
+          div.print\\:p-0 {
+            display: block !important;
+            width: 210mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+
           /* Ajuster la hauteur et le padding du conteneur du CV pour l'impression A4 */
+          .w-\\[210mm\\] {
+            width: 210mm !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: block !important;
+          }
+
           .w-\\[210mm\\] > div {
             padding-bottom: 12mm !important;
             min-height: 297mm !important;
