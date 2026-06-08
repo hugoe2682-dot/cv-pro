@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 import { AuthOptions } from "next-auth";
 import { sendWelcomeEmail } from "@/lib/mail";
+import { isManagerEmail } from "@/lib/manager";
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -20,7 +21,10 @@ export const authOptions: AuthOptions = {
           firstName: "N/A",
           lastName: "N/A",
           emailConfirmed: true,
-        }
+          // Role is determined purely by email — not stored value
+          role: isManagerEmail(profile.email) ? "manager" : "user",
+          blocked: false,
+        };
       }
     }),
   ],
@@ -34,12 +38,30 @@ export const authOptions: AuthOptions = {
         token.id = user.id;
         token.emailConfirmed = user.emailConfirmed;
       }
+      // Refresh blocked status from DB; role is enforced by email only
+      if (token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { blocked: true, emailConfirmed: true, email: true },
+          });
+          if (dbUser) {
+            token.blocked = dbUser.blocked;
+            token.emailConfirmed = dbUser.emailConfirmed;
+            // ✅ Role ALWAYS determined by email — cannot be changed in DB
+            token.role = isManagerEmail(dbUser.email) ? "manager" : "user";
+          }
+        } catch (_) {}
+      }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
         session.user.emailConfirmed = token.emailConfirmed;
+        // ✅ Double-check: role enforced by email in session too
+        session.user.role = isManagerEmail(session.user.email) ? "manager" : "user";
+        session.user.blocked = (token.blocked as boolean) ?? false;
       }
       return session;
     },

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signIn, signOut } from "next-auth/react";
 import { useAuth } from "@/hooks/useAuth";
-import { FileText, LogIn, LogOut, Menu, X, Award, GraduationCap, User, LayoutDashboard } from "lucide-react";
+import { FileText, LogIn, LogOut, Menu, X, Award, GraduationCap, User, LayoutDashboard, Shield } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
@@ -107,6 +107,11 @@ export default function Navbar() {
                     <Link href="/editor" className="text-sm font-medium hover:text-white/80 transition-colors">
                       Éditeur
                     </Link>
+                    {(session?.user as any)?.role === "manager" && (
+                      <Link href="/manager" className="flex items-center gap-1.5 text-sm font-bold text-violet-300 hover:text-violet-100 transition-colors">
+                        <Shield size={14} /> Manager
+                      </Link>
+                    )}
                   </div>
                     <div className="flex items-center gap-3 ml-4 border-l border-white/20 pl-4">
                       {session.user?.image ? (
@@ -198,6 +203,16 @@ export default function Navbar() {
                       <LayoutDashboard size={20} className="text-indigo-600" />
                       <span className="font-medium">Tableau de bord</span>
                     </Link>
+                    {(session?.user as any)?.role === "manager" && (
+                      <Link
+                        href="/manager"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center gap-3 p-3 rounded-xl hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-colors text-violet-600 dark:text-violet-400"
+                      >
+                        <Shield size={20} className="text-violet-600" />
+                        <span className="font-bold">Panneau Manager</span>
+                      </Link>
+                    )}
                     <Link 
                       href="/editor" 
                       onClick={() => setIsMenuOpen(false)}

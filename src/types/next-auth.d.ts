@@ -9,12 +9,16 @@ declare module "next-auth" {
       /** The user's postal address. */
       id: string
       emailConfirmed: boolean
+      role: string
+      blocked: boolean
     } & DefaultSession["user"]
   }
 
   interface User {
     id: string
     emailConfirmed: boolean
+    role: string
+    blocked: boolean
   }
 }
 
@@ -24,5 +28,7 @@ declare module "next-auth/jwt" {
     /** OpenID ID Token */
     id: string
     emailConfirmed: boolean
+    role: string
+    blocked: boolean
   }
 }

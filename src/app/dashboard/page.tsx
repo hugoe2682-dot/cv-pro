@@ -28,7 +28,9 @@ import {
   Palette,
   Printer,
   Copy,
-  Globe
+  Globe,
+  Image as ImageIcon,
+  Trash2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingScreen from "@/components/LoadingScreen";
@@ -37,6 +39,43 @@ import { useReactToPrint } from "react-to-print";
 import CVPreview from "@/components/CVPreview";
 import QRCode from "react-qr-code";
 import { generateVCard } from "@/lib/vcard";
+
+const resizeImage = (base64Str: string, maxWidth = 800, maxHeight = 800): Promise<string> => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = base64Str;
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      let width = img.width;
+      let height = img.height;
+
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.round((width * maxHeight) / height);
+          height = maxHeight;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", 0.7));
+      } else {
+        resolve(base64Str);
+      }
+    };
+    img.onerror = () => {
+      resolve(base64Str);
+    };
+  });
+};
 
 export default function DashboardPage() {
   const { user, session, status } = useAuth();
@@ -49,6 +88,196 @@ export default function DashboardPage() {
   const [isColorBarOpen, setIsColorBarOpen] = useState(false);
   const [isBusinessCardOpen, setIsBusinessCardOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  const [tempBgImage, setTempBgImage] = useState<string>("");
+  const [tempBgX, setTempBgX] = useState<number>(0);
+  const [tempBgY, setTempBgY] = useState<number>(0);
+  const [tempBgZoom, setTempBgZoom] = useState<number>(1);
+  const [tempBgOpacity, setTempBgOpacity] = useState<number>(0.3);
+  const [isSavingBg, setIsSavingBg] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [dragStart, setDragStart] = useState<{ x: number; y: number; bgX: number; bgY: number }>({ x: 0, y: 0, bgX: 0, bgY: 0 });
+  const cardRef = useRef<HTMLDivElement>(null);
+  const cardBgInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (cvData?.cardBackground) {
+      setTempBgImage(cvData.cardBackground.image || "");
+      setTempBgX(cvData.cardBackground.x || 0);
+      setTempBgY(cvData.cardBackground.y || 0);
+      setTempBgZoom(cvData.cardBackground.zoom || 1);
+      setTempBgOpacity(cvData.cardBackground.opacity !== undefined ? cvData.cardBackground.opacity : 0.3);
+    } else {
+      setTempBgImage("");
+      setTempBgX(0);
+      setTempBgY(0);
+      setTempBgZoom(1);
+      setTempBgOpacity(0.3);
+    }
+  }, [isBusinessCardOpen, cvData]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!tempBgImage) return;
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX,
+      y: e.clientY,
+      bgX: tempBgX,
+      bgY: tempBgY,
+    });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const deltaX = e.clientX - dragStart.x;
+    const deltaY = e.clientY - dragStart.y;
+    
+    setTempBgX(dragStart.bgX + (deltaX / rect.width) * 100);
+    setTempBgY(dragStart.bgY + (deltaY / rect.height) * 100);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!tempBgImage) return;
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        bgX: tempBgX,
+        bgY: tempBgY,
+      });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) return;
+    const rect = cardRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    if (e.touches.length === 1) {
+      const deltaX = e.touches[0].clientX - dragStart.x;
+      const deltaY = e.touches[0].clientY - dragStart.y;
+      
+      setTempBgX(dragStart.bgX + (deltaX / rect.width) * 100);
+      setTempBgY(dragStart.bgY + (deltaY / rect.height) * 100);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
+
+  const handleCardBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        setModalConfig({
+          isOpen: true,
+          title: "Fichier trop lourd",
+          message: "L'image ne doit pas dépasser 5Mo.",
+          type: "warning",
+          confirmText: "Compris",
+          onConfirm: closeModal
+        });
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        const resized = await resizeImage(base64, 800, 800);
+        setTempBgImage(resized);
+        setTempBgX(0);
+        setTempBgY(0);
+        setTempBgZoom(1);
+        setTempBgOpacity(0.3);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveBackground = () => {
+    setTempBgImage("");
+    setTempBgX(0);
+    setTempBgY(0);
+    setTempBgZoom(1);
+    setTempBgOpacity(0.3);
+  };
+
+  const handleSaveBackground = async () => {
+    if (!cvData) return;
+    setIsSavingBg(true);
+    
+    const updatedCv = {
+      ...cvData,
+      cardBackground: {
+        image: tempBgImage,
+        x: tempBgX,
+        y: tempBgY,
+        zoom: tempBgZoom,
+        opacity: tempBgOpacity,
+      }
+    };
+    
+    setCvData(updatedCv);
+    localStorage.setItem("cvDataPrint", JSON.stringify(updatedCv));
+    localStorage.setItem("cvData", JSON.stringify(updatedCv));
+
+    if (status === "authenticated" && userData?.emailConfirmed && cvId) {
+      try {
+        const res = await fetch("/api/cv", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: cvId,
+            data: updatedCv,
+            name: updatedCv.name || cvData.personal?.name || "Mon CV",
+          }),
+        });
+        if (res.ok) {
+          setModalConfig({
+            isOpen: true,
+            title: "Arrière-plan enregistré",
+            message: "L'arrière-plan de votre carte de visite a été enregistré avec succès.",
+            type: "success",
+            confirmText: "Super",
+            onConfirm: closeModal,
+          });
+        } else {
+          throw new Error("Save failed");
+        }
+      } catch (error) {
+        console.error("Error saving background:", error);
+        setModalConfig({
+          isOpen: true,
+          title: "Erreur",
+          message: "Impossible d'enregistrer l'arrière-plan sur le serveur. Veuillez réessayer.",
+          type: "danger",
+          confirmText: "Fermer",
+          onConfirm: closeModal,
+        });
+      } finally {
+        setIsSavingBg(false);
+      }
+    } else {
+      setIsSavingBg(false);
+      setModalConfig({
+        isOpen: true,
+        title: "Arrière-plan mis à jour",
+        message: "L'arrière-plan a été mis à jour localement. Confirmez votre compte pour sauvegarder en ligne.",
+        type: "info",
+        confirmText: "OK",
+        onConfirm: closeModal,
+      });
+    }
+  };
 
   const handleColorChange = async (color: string) => {
     if (!cvData) return;
@@ -323,7 +552,15 @@ export default function DashboardPage() {
           >
             Tableau de bord
           </motion.h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Bienvenue sur votre espace personnel</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg flex flex-wrap items-center justify-center md:justify-start gap-2">
+            <span>Bienvenue sur votre espace personnel</span>
+            <span className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900 px-2.5 py-0.5 rounded-xl border border-slate-200 dark:border-slate-800 text-sm">
+              <span className="w-5 h-5 rounded flex items-center justify-center font-black text-white text-[9px] flex-shrink-0" style={{ backgroundColor: cvData?.themeColor || '#6366f1' }}>
+                CV
+              </span>
+              <span className="font-black tracking-tight text-xs" style={{ color: cvData?.themeColor || '#6366f1' }}>PRO</span>
+            </span>
+          </p>
           {!isConfirmed && (
             <div className="mt-4 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 rounded-xl inline-flex items-center gap-2 text-sm font-bold animate-pulse">
               <ShieldCheck size={16} />
@@ -333,7 +570,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Main Selection Icons */}
-        <div className={`grid grid-cols-1 ${isConfirmed ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-8 mb-16`}>
+        <div className={`grid grid-cols-1 sm:grid-cols-2 ${isConfirmed ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-8 mb-16`}>
           {/* CV Card */}
           <motion.div
             whileHover={{ y: -5, scale: 1.02 }}
@@ -355,6 +592,32 @@ export default function DashboardPage() {
             </div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Mon CV</h2>
             <p className="text-slate-500 dark:text-slate-400 text-sm">Voir et partager mon CV (QR Code)</p>
+          </motion.div>
+
+          {/* Business Card Card */}
+          <motion.div
+            whileHover={{ y: -5, scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              if (cvId && cvData) {
+                setIsBusinessCardOpen(true);
+              } else {
+                router.push("/editor");
+              }
+            }}
+            className="group cursor-pointer relative overflow-hidden bg-white dark:bg-slate-900 rounded-[3rem] p-8 shadow-xl shadow-emerald-500/5 border border-slate-200 dark:border-slate-800 flex flex-col items-center text-center transition-all hover:border-emerald-500/30"
+          >
+            <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity">
+              <QrCode size={100} />
+            </div>
+            <div 
+              className="w-20 h-20 text-white rounded-[1.5rem] flex items-center justify-center mb-6 shadow-lg group-hover:-rotate-6 transition-transform"
+              style={{ backgroundColor: cvData?.themeColor || '#10b981', boxShadow: `0 10px 15px -3px ${(cvData?.themeColor || '#10b981')}40` }}
+            >
+              <QrCode size={40} />
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Ma Carte Visite</h2>
+            <p className="text-slate-500 dark:text-slate-400 text-sm">Voir et imprimer ma carte digitale</p>
           </motion.div>
 
           {/* Profile Card */}
@@ -874,16 +1137,46 @@ export default function DashboardPage() {
                     
                     {/* BUSINESS CARD — WHITE / BLACK BORDER */}
                     <div 
-                      className="w-full max-w-[500px] h-[285px] rounded-2xl bg-white border-2 border-black p-7 flex items-stretch justify-between gap-6 shadow-2xl select-none relative overflow-hidden"
+                      ref={cardRef}
+                      onMouseDown={handleMouseDown}
+                      onMouseMove={handleMouseMove}
+                      onMouseUp={handleMouseUp}
+                      onMouseLeave={handleMouseUp}
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                      className={`w-full max-w-[500px] h-[285px] rounded-2xl bg-white border-2 border-black p-7 flex items-stretch justify-between gap-6 shadow-2xl select-none relative overflow-hidden ${tempBgImage ? 'cursor-move' : ''}`}
                     >
+                      {/* Background Image */}
+                      {tempBgImage && (
+                        <img 
+                          src={tempBgImage}
+                          alt="Background"
+                          style={{
+                            position: 'absolute',
+                            left: `${50 + tempBgX}%`,
+                            top: `${50 + tempBgY}%`,
+                            transform: `translate(-50%, -50%) scale(${tempBgZoom})`,
+                            opacity: tempBgOpacity,
+                            pointerEvents: 'none',
+                            userSelect: 'none',
+                            WebkitUserSelect: 'none',
+                            maxWidth: 'none',
+                            maxHeight: 'none',
+                            zIndex: 0,
+                          }}
+                          draggable={false}
+                        />
+                      )}
+
                       {/* Subtle accent line at top using theme color */}
                       <div 
-                        className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
+                        className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl z-10"
                         style={{ backgroundColor: cvData.themeColor || '#6366f1' }}
                       />
 
                       {/* Left Side */}
-                      <div className="flex-1 flex flex-col justify-between overflow-hidden">
+                      <div className="flex-1 flex flex-col justify-between overflow-hidden relative z-10">
 
                         {/* Logo + Brand */}
                         <div className="flex items-center gap-2">
@@ -939,7 +1232,7 @@ export default function DashboardPage() {
                       </div>
 
                       {/* Right Side: QR Code */}
-                      <div className="flex flex-col items-center justify-center gap-2 flex-shrink-0">
+                      <div className="flex flex-col items-center justify-center gap-2 flex-shrink-0 relative z-10">
                         <div 
                           className="p-2 rounded-xl border-2"
                           style={{ borderColor: cvData.themeColor || '#6366f1' }}
@@ -966,7 +1259,75 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Actions Column */}
-                  <div className="w-full md:w-[260px] flex flex-col gap-4 justify-center">
+                  <div className="w-full md:w-[280px] flex flex-col gap-4 justify-center">
+                    {tempBgImage && (
+                      <>
+                        <button
+                          onClick={handleSaveBackground}
+                          disabled={isSavingBg}
+                          className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-black rounded-2xl shadow-xl shadow-emerald-500/10 active:scale-95 transition-all flex items-center justify-center gap-2.5 cursor-pointer border-none"
+                        >
+                          {isSavingBg ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                          Enregistrer
+                        </button>
+
+                        <div className="p-4 bg-slate-800/50 rounded-2xl border border-slate-800 space-y-4">
+                          <p className="text-slate-300 text-xs font-bold text-center">
+                            👉 Glissez l'image sur la carte pour la déplacer
+                          </p>
+                          
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-[11px] text-slate-400 font-bold">
+                              <span>Zoom</span>
+                              <span>{Math.round(tempBgZoom * 100)}%</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0.5"
+                              max="4"
+                              step="0.05"
+                              value={tempBgZoom}
+                              onChange={(e) => setTempBgZoom(parseFloat(e.target.value))}
+                              className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                            />
+                          </div>
+
+                          <div className="space-y-1.5">
+                            <div className="flex justify-between text-[11px] text-slate-400 font-bold">
+                              <span>Transparence</span>
+                              <span>{Math.round((1 - tempBgOpacity) * 100)}%</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0.05"
+                              max="0.95"
+                              step="0.05"
+                              value={tempBgOpacity}
+                              onChange={(e) => setTempBgOpacity(parseFloat(e.target.value))}
+                              className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-500"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={() => cardBgInputRef.current?.click()}
+                              className="py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl active:scale-95 transition-all text-xs flex items-center justify-center gap-1.5 border-none cursor-pointer"
+                            >
+                              <ImageIcon size={12} />
+                              Changer
+                            </button>
+                            <button
+                              onClick={handleRemoveBackground}
+                              className="py-2.5 bg-rose-950/30 hover:bg-rose-950/50 border border-rose-900/30 text-rose-400 font-bold rounded-xl active:scale-95 transition-all text-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              <Trash2 size={12} />
+                              Supprimer
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
                     <button
                       onClick={() => window.print()}
                       className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/10 active:scale-95 transition-all flex items-center justify-center gap-2.5 cursor-pointer border-none"
@@ -975,30 +1336,23 @@ export default function DashboardPage() {
                       Imprimer la carte
                     </button>
 
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/cv/${cvId}`);
-                        setIsCopied(true);
-                        setTimeout(() => setIsCopied(false), 2000);
-                      }}
-                      className={`w-full py-4 font-black rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2.5 cursor-pointer border-none ${
-                        isCopied 
-                          ? "bg-emerald-600 text-white" 
-                          : "bg-slate-800 hover:bg-slate-700 text-slate-200"
-                      }`}
-                    >
-                      {isCopied ? (
-                        <>
-                          <CheckCircle2 size={18} />
-                          Lien Copié !
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={18} />
-                          Copier lien public
-                        </>
-                      )}
-                    </button>
+                    {!tempBgImage && (
+                      <button
+                        onClick={() => cardBgInputRef.current?.click()}
+                        className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-slate-200 font-black rounded-2xl active:scale-95 transition-all flex items-center justify-center gap-2.5 cursor-pointer border-none"
+                      >
+                        <ImageIcon size={18} />
+                        Choisir un arrière-plan
+                      </button>
+                    )}
+
+                    <input
+                      type="file"
+                      ref={cardBgInputRef}
+                      onChange={handleCardBgUpload}
+                      accept="image/*"
+                      className="hidden"
+                    />
 
                     <p className="text-slate-500 text-xs text-center leading-relaxed">
                       L'impression génère une mise en page optimisée prête à découper (85mm x 55mm).
@@ -1045,14 +1399,36 @@ export default function DashboardPage() {
                   <div 
                     style={{ border: '2px solid #000000', width: '85mm', height: '55mm', padding: '0', display: 'flex', alignItems: 'stretch', borderRadius: '3mm', background: '#ffffff', color: '#0f172a', boxSizing: 'border-box', overflow: 'hidden', position: 'relative' }}
                   >
+                    {/* Background Image for print card */}
+                    {tempBgImage && (
+                      <img 
+                        src={tempBgImage}
+                        alt="Background"
+                        style={{
+                          position: 'absolute',
+                          left: `${50 + tempBgX}%`,
+                          top: `${50 + tempBgY}%`,
+                          transform: `translate(-50%, -50%) scale(${tempBgZoom})`,
+                          opacity: tempBgOpacity,
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                          maxWidth: 'none',
+                          maxHeight: 'none',
+                          zIndex: 0,
+                          WebkitPrintColorAdjust: 'exact',
+                          printColorAdjust: 'exact',
+                        }}
+                      />
+                    )}
+
                     {/* Theme accent top bar */}
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1.5mm', backgroundColor: cvData.themeColor || '#6366f1' }} />
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1.5mm', backgroundColor: cvData.themeColor || '#6366f1', zIndex: 10 }} />
 
                     {/* Left Content */}
-                    <div style={{ flex: 1, padding: '5mm 4mm 4mm 5mm', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, padding: '5mm 4mm 4mm 5mm', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', overflow: 'hidden', position: 'relative', zIndex: 10 }}>
                       {/* Logo */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '2mm', marginTop: '1mm' }}>
-                        <div style={{ width: '6mm', height: '6mm', borderRadius: '1.5mm', backgroundColor: cvData.themeColor || '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: '6mm', height: '6mm', borderRadius: '1.5mm', backgroundColor: cvData.themeColor || '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, zIndex: 10 }}>
                           <span style={{ color: '#fff', fontSize: '8px', fontWeight: 900, lineHeight: 1 }}>CV</span>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
@@ -1082,7 +1458,7 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Right: QR Code */}
-                    <div style={{ width: '38mm', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5mm', borderLeft: '1pt solid #e5e7eb', padding: '4mm 3mm' }}>
+                    <div style={{ width: '38mm', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5mm', borderLeft: '1pt solid #e5e7eb', padding: '4mm 3mm', position: 'relative', zIndex: 10 }}>
                       <div style={{ border: `2pt solid ${cvData.themeColor || '#6366f1'}`, padding: '1mm', borderRadius: '2mm', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <QRCode 
                           value={generateVCard(cvData)}

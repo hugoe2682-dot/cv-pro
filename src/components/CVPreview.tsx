@@ -86,16 +86,277 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
   const mockStyle = "opacity-40 italic font-light";
 
   const generateQRCodeContent = () => {
-    // Return vCard directly to ensure the QR code updates visually in real-time as the user types/modifies/corrects information
     return generateVCard(cvData, showExamples);
   };
 
-  return (
-    <div 
-      style={{ "--color-primary": primaryColor } as React.CSSProperties}
-      className="w-full min-h-[297mm] bg-white text-slate-800 p-10 print:p-8 flex flex-col font-sans overflow-visible relative pb-20 print:pb-20"
-    >
-      {/* Header */}
+  const renderSummary = () => {
+    if (!summary.value) return null;
+    return (
+      <div className="mb-6">
+        <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-3">Profil</h3>
+        <p className={`text-xs leading-relaxed ${summary.isMock ? mockStyle + " text-slate-400" : "text-slate-700"}`}>
+          {summary.value}
+        </p>
+      </div>
+    );
+  };
+
+  const renderEducation = () => {
+    if (education.length === 0) return null;
+    return (
+      <div className="mb-6">
+        <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Études et Formations</h3>
+        <div className="space-y-4">
+          {education.map((edu: any, idx: number) => (
+            <div key={edu.id || idx}>
+              <div className="flex justify-between items-baseline mb-0.5">
+                <h4 className={`text-xs font-bold ${!hasEducation ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
+                  {edu.degree || "Nom du diplôme"}
+                </h4>
+                <span 
+                  style={hasEducation ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
+                  className={`text-[10px] font-medium px-2 py-0.5 rounded ${!hasEducation ? mockStyle + " text-slate-400" : ""}`}
+                >
+                  {edu.startDate || "Début"} - {edu.endDate || "Fin"}
+                </span>
+              </div>
+              <div className={`text-xs font-medium mb-1 ${!hasEducation ? mockStyle + " text-slate-400" : "text-slate-600"}`}>
+                {edu.school || "Institut / École / Université"}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderExperience = () => {
+    if (experience.length === 0) return null;
+    return (
+      <div className="mb-6">
+        <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Expérience Professionnelle</h3>
+        <div className="space-y-4">
+          {experience.map((exp: any, idx: number) => (
+            <div key={exp.id || idx}>
+              <div className="flex justify-between items-baseline mb-0.5">
+                <h4 className={`text-xs font-bold ${!hasExperience ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
+                  {exp.title || "Poste"}
+                </h4>
+                <span 
+                  style={hasExperience ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
+                  className={`text-[10px] font-medium px-2 py-0.5 rounded ${!hasExperience ? mockStyle + " text-slate-400" : ""}`}
+                >
+                  {exp.startDate || "Début"} - {exp.endDate || (hasExperience ? "En cours" : "Fin")}
+                </span>
+              </div>
+              <div className={`text-xs font-medium mb-1 ${!hasExperience ? mockStyle + " text-slate-400" : "text-slate-600"}`}>
+                {exp.company || "Entreprise"}
+              </div>
+              <p className={`text-xs leading-relaxed whitespace-pre-wrap ${!hasExperience ? mockStyle + " text-slate-400" : "text-slate-700"}`}>
+                {exp.description || "Description des missions..."}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderProjects = () => {
+    if (projects.length === 0) return null;
+    return (
+      <div className="mb-6">
+        <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Projets</h3>
+        <div className="space-y-4">
+          {projects.map((project: any, idx: number) => (
+            <div key={project.id || idx}>
+              <div className="flex justify-between items-baseline mb-0.5">
+                <h4 className={`text-xs font-bold ${!hasProjects ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
+                  {project.title || "Titre du projet"}
+                </h4>
+                <span 
+                  style={hasProjects ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
+                  className={`text-[10px] font-medium px-2 py-0.5 rounded ${!hasProjects ? mockStyle + " text-slate-400" : ""}`}
+                >
+                  {project.date || "Date"}
+                </span>
+              </div>
+              <p className={`text-xs leading-relaxed whitespace-pre-wrap ${!hasProjects ? mockStyle + " text-slate-400" : "text-slate-700"}`}>
+                {project.description || "Petite description du projet..."}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderSkills = () => {
+    if (skills.length === 0) return null;
+    return (
+      <div className="mb-6">
+        <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Compétences</h3>
+        <div className="flex flex-wrap gap-2">
+          {skills.map((skill: string, index: number) => (
+            <span key={index} className={`px-2.5 py-1 bg-slate-100 text-[10px] font-medium rounded ${!hasSkills ? mockStyle + " text-slate-400 bg-slate-50 border border-slate-200" : "text-slate-700"}`}>
+              {skill}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderLanguages = () => {
+    if (languages.length === 0) return null;
+    return (
+      <div className="mb-6">
+        <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Langues</h3>
+        <div className="space-y-2.5">
+          {languages.map((lang: any, idx: number) => (
+            <div key={lang.id || idx} className="flex items-center justify-between text-xs border-b border-slate-100 pb-1 last:border-0 last:pb-0">
+              <span className={`font-medium ${!hasLanguages ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
+                {lang.name || "Langue"}
+              </span>
+              <span 
+                style={hasLanguages ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
+                className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${!hasLanguages ? mockStyle + " text-slate-400" : ""}`}
+              >
+                {lang.level || "Niveau"}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderCertificates = () => {
+    if (certificates.length === 0) return null;
+    return (
+      <div className="mb-6">
+        <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Certificats</h3>
+        <div className="space-y-3">
+          {certificates.map((cert: any, idx: number) => (
+            <div key={cert.id || idx} className="flex flex-col gap-1.5">
+              <span className={`font-medium text-xs ${!hasCertificates ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
+                {cert.title || "Titre du certificat"}
+              </span>
+              {cert.image && (cert.showOnCV !== false || isPublicView) && (
+                <img src={cert.image} alt="Certificat" className={`w-full rounded border border-slate-200 max-h-28 object-cover ${!hasCertificates ? "opacity-40 grayscale" : ""}`} />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderInterests = () => {
+    if (interests.length === 0) return null;
+    return (
+      <div className="mb-6">
+        <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Centres d'intérêt</h3>
+        <div className="flex flex-wrap gap-1.5">
+          {interests.map((interest: string, index: number) => (
+            <span key={index} className={`px-2 py-0.5 bg-slate-50 text-[10px] font-medium rounded border border-slate-100 ${!hasInterests ? mockStyle + " text-slate-400" : "text-slate-700"}`}>
+              {interest}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderContactListInline = () => {
+    return (
+      <>
+        {(dob.value || nationality.value) && (
+          <span className="flex items-center gap-1.5">
+            <span className={dob.isMock ? mockStyle : ""}>{dob.value}</span>
+            {dob.value && nationality.value && <span className="opacity-30">|</span>}
+            <span className={nationality.isMock ? mockStyle : ""}>{nationality.value}</span>
+          </span>
+        )}
+        {email.value && <span className={email.isMock ? mockStyle : ""}>• {email.value}</span>}
+        {phone.value && <span className={phone.isMock ? mockStyle : ""}>• {phone.value}</span>}
+        {whatsapp.value && <span className={whatsapp.isMock ? mockStyle : ""}>• WhatsApp: {whatsapp.value}</span>}
+        {address.value && <span className={address.isMock ? mockStyle : ""}>• {address.value}</span>}
+        {linkedin.value && <span className={linkedin.isMock ? mockStyle : ""}>• LinkedIn: {linkedin.value}</span>}
+        {website.value && <span className={website.isMock ? mockStyle : ""}>• {website.value}</span>}
+      </>
+    );
+  };
+
+  const renderContactListInlinePlain = () => {
+    return (
+      <>
+        {dob.value && <span className={dob.isMock ? mockStyle : ""}>{dob.value}</span>}
+        {nationality.value && <span className={nationality.isMock ? mockStyle : ""}>• {nationality.value}</span>}
+        {email.value && <span className={email.isMock ? mockStyle : ""}>• {email.value}</span>}
+        {phone.value && <span className={phone.isMock ? mockStyle : ""}>• {phone.value}</span>}
+        {address.value && <span className={address.isMock ? mockStyle : ""}>• {address.value}</span>}
+      </>
+    );
+  };
+
+  const renderContactListVertical = () => {
+    return (
+      <div className="space-y-2">
+        {dob.value && (
+          <div className="flex items-center gap-1.5">
+            <Calendar size={12} className="text-[var(--color-primary)] opacity-70" />
+            <span className={dob.isMock ? mockStyle : ""}>{dob.value}</span>
+          </div>
+        )}
+        {nationality.value && (
+          <div className="flex items-center gap-1.5">
+            <Globe size={12} className="text-[var(--color-primary)] opacity-70" />
+            <span className={nationality.isMock ? mockStyle : ""}>{nationality.value}</span>
+          </div>
+        )}
+        {email.value && (
+          <div className="flex items-center gap-1.5">
+            <Mail size={12} className="text-[var(--color-primary)] opacity-70" />
+            <span className={`break-all ${email.isMock ? mockStyle : ""}`}>{email.value}</span>
+          </div>
+        )}
+        {phone.value && (
+          <div className="flex items-center gap-1.5">
+            <Phone size={12} className="text-[var(--color-primary)] opacity-70" />
+            <span className={phone.isMock ? mockStyle : ""}>{phone.value}</span>
+          </div>
+        )}
+        {whatsapp.value && (
+          <div className="flex items-center gap-1.5">
+            <MessageCircle size={12} className="text-[var(--color-primary)] opacity-70" />
+            <span className={whatsapp.isMock ? mockStyle : ""}>{whatsapp.value}</span>
+          </div>
+        )}
+        {address.value && (
+          <div className="flex items-center gap-1.5">
+            <MapPin size={12} className="text-[var(--color-primary)] opacity-70" />
+            <span className={address.isMock ? mockStyle : ""}>{address.value}</span>
+          </div>
+        )}
+        {linkedin.value && (
+          <div className="flex items-center gap-1.5">
+            <Briefcase size={12} className="text-[var(--color-primary)] opacity-70" />
+            <span className={`break-all ${linkedin.isMock ? mockStyle : ""}`}>{linkedin.value}</span>
+          </div>
+        )}
+        {website.value && (
+          <div className="flex items-center gap-1.5">
+            <Globe size={12} className="text-[var(--color-primary)] opacity-70" />
+            <span className={`break-all ${website.isMock ? mockStyle : ""}`}>{website.value}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderHeaderClassic = () => {
+    return (
       <div className="border-b-2 border-[var(--color-primary)] pb-6 mb-6 flex justify-between items-start gap-6">
         <div className="flex-1">
           {name.value && (
@@ -109,7 +370,7 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
             </h2>
           )}
           
-          <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-sm text-slate-600">
+          <div className="flex flex-wrap gap-x-4 gap-y-2 mt-4 text-xs text-slate-600">
             {(dob.value || nationality.value) && (
               <div className="flex items-center gap-1.5">
                 <Calendar size={14} className="text-[var(--color-primary)] opacity-70" />
@@ -168,8 +429,7 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
             )}
           </div>
 
-          {/* Other Links (LinkedIn, Website, etc.) */}
-          <div className="flex flex-wrap gap-4 mt-3 text-sm text-slate-600">
+          <div className="flex flex-wrap gap-4 mt-3 text-xs text-slate-600">
             {linkedin.value && (
               <div className="flex items-center gap-1.5">
                 <Briefcase size={14} className="text-[var(--color-primary)] opacity-70" />
@@ -209,9 +469,7 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
           </div>
         </div>
 
-        {/* Photo & QR Code Container */}
         <div className="flex-shrink-0 flex items-center gap-4">
-          {/* Photo (if enabled and present) */}
           {cvData.personal.includePhoto && cvData.personal.photo && (
             <img 
               src={cvData.personal.photo} 
@@ -220,7 +478,6 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
             />
           )}
 
-          {/* QR Code (Only displayed in header if there is no profile photo) */}
           {(!cvData.personal.includePhoto || !cvData.personal.photo) && (
             <div className={`w-28 h-28 bg-white p-2 rounded-xl border border-slate-200 shadow-sm flex items-center justify-center ${name.isMock ? "opacity-40 grayscale" : ""}`}>
               <QRCode 
@@ -233,168 +490,216 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
           )}
         </div>
       </div>
+    );
+  };
 
-      <div className="flex gap-8 flex-1">
-        {/* Colonne Principale */}
-        <div className="w-2/3 pr-4">
-          {summary.value && (
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-3">Profil</h3>
-              <p className={`text-sm leading-relaxed ${summary.isMock ? mockStyle + " text-slate-400" : "text-slate-700"}`}>
-                {summary.value}
-              </p>
-            </div>
-          )}
-
-          {education.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Études et Formations</h3>
-              <div className="space-y-6">
-                {education.map((edu: any, idx: number) => (
-                  <div key={edu.id || idx}>
-                    <div className="flex justify-between items-baseline mb-1">
-                      <h4 className={`font-bold ${!hasEducation ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
-                        {edu.degree || "Nom du diplôme"}
-                      </h4>
-                      <span 
-                        style={hasEducation ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
-                        className={`text-xs font-medium px-2 py-0.5 rounded ${!hasEducation ? mockStyle + " text-slate-400" : ""}`}
-                      >
-                        {edu.startDate || "Début"} - {edu.endDate || "Fin"}
-                      </span>
-                    </div>
-                    <div className={`text-sm font-medium mb-2 ${!hasEducation ? mockStyle + " text-slate-400" : "text-slate-600"}`}>
-                      {edu.school || "Institut / École / Université"}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {experience.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Expérience Professionnelle</h3>
-              <div className="space-y-6">
-                {experience.map((exp: any, idx: number) => (
-                  <div key={exp.id || idx}>
-                    <div className="flex justify-between items-baseline mb-1">
-                      <h4 className={`font-bold ${!hasExperience ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
-                        {exp.title || "Poste"}
-                      </h4>
-                      <span 
-                        style={hasExperience ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
-                        className={`text-xs font-medium px-2 py-0.5 rounded ${!hasExperience ? mockStyle + " text-slate-400" : ""}`}
-                      >
-                        {exp.startDate || "Début"} - {exp.endDate || (hasExperience ? "En cours" : "Fin")}
-                      </span>
-                    </div>
-                    <div className={`text-sm font-medium mb-2 ${!hasExperience ? mockStyle + " text-slate-400" : "text-slate-600"}`}>
-                      {exp.company || "Entreprise"}
-                    </div>
-                    <p className={`text-sm leading-relaxed whitespace-pre-wrap ${!hasExperience ? mockStyle + " text-slate-400" : "text-slate-700"}`}>
-                      {exp.description || "Description des missions..."}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {projects.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Projets</h3>
-              <div className="space-y-6">
-                {projects.map((project: any, idx: number) => (
-                  <div key={project.id || idx}>
-                    <div className="flex justify-between items-baseline mb-1">
-                      <h4 className={`font-bold ${!hasProjects ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
-                        {project.title || "Titre du projet"}
-                      </h4>
-                      <span 
-                        style={hasProjects ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
-                        className={`text-xs font-medium px-2 py-0.5 rounded ${!hasProjects ? mockStyle + " text-slate-400" : ""}`}
-                      >
-                        {project.date || "Date"}
-                      </span>
-                    </div>
-                    <p className={`text-sm leading-relaxed whitespace-pre-wrap ${!hasProjects ? mockStyle + " text-slate-400" : "text-slate-700"}`}>
-                      {project.description || "Petite description du projet..."}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Colonne Latérale */}
-        <div className="w-1/3 flex flex-col">
-          {skills.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Compétences</h3>
-              <div className="flex flex-wrap gap-2">
-                {skills.map((skill: string, index: number) => (
-                  <span key={index} className={`px-2.5 py-1 bg-slate-100 text-xs font-medium rounded-md ${!hasSkills ? mockStyle + " text-slate-400 bg-slate-50 border border-slate-200" : "text-slate-700"}`}>
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {languages.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Langues</h3>
-              <div className="space-y-3">
-                {languages.map((lang: any, idx: number) => (
-                  <div key={lang.id || idx} className="flex items-center gap-2 border-b border-slate-100 pb-2 last:border-0 last:pb-0">
-                    <span className={`font-medium ${!hasLanguages ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
-                      {lang.name || "Langue"}
-                    </span>
-                    <span 
-                      style={hasLanguages ? { backgroundColor: `${primaryColor}15`, color: primaryColor } : {}}
-                      className={`text-xs font-medium px-2 py-0.5 rounded ${!hasLanguages ? mockStyle + " text-slate-400" : ""}`}
-                    >
-                      {lang.level || "Niveau"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {certificates.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Certificats</h3>
-              <div className="space-y-4">
-                {certificates.map((cert: any, idx: number) => (
-                  <div key={cert.id || idx} className="flex flex-col gap-2">
-                    <span className={`font-medium text-sm ${!hasCertificates ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
-                      {cert.title || "Titre du certificat"}
-                    </span>
-                    {cert.image && (cert.showOnCV !== false || isPublicView) && (
-                      <img src={cert.image} alt="Certificat" className={`w-full rounded border border-slate-200 ${!hasCertificates ? "opacity-40 grayscale" : ""}`} />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {interests.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Centres d'intérêt</h3>
-              <p className={`text-sm leading-relaxed ${!hasInterests ? mockStyle + " text-slate-400" : "text-slate-700"}`}>
-                {interests.join(" ")}
-              </p>
-            </div>
-          )}
+  const renderClassic = () => {
+    return (
+      <div className="flex flex-col flex-1">
+        {renderHeaderClassic()}
+        <div className="flex gap-8 flex-1">
+          <div className="w-2/3 pr-4">
+            {renderSummary()}
+            {renderEducation()}
+            {renderExperience()}
+            {renderProjects()}
+          </div>
+          <div className="w-1/3 flex flex-col">
+            {renderSkills()}
+            {renderLanguages()}
+            {renderCertificates()}
+            {renderInterests()}
+          </div>
         </div>
       </div>
+    );
+  };
 
-      {/* QR Code at the bottom-right of all pages (only when a photo is added/present) */}
-      {cvData.personal.includePhoto && cvData.personal.photo && (
+  const renderModern = () => {
+    return (
+      <div className="flex flex-col flex-1">
+        <div className="border-b-4 border-[var(--color-primary)] pb-6 mb-6 flex flex-col items-center text-center relative">
+          {cvData.personal.includePhoto && cvData.personal.photo && (
+            <img 
+              src={cvData.personal.photo} 
+              alt="Profile" 
+              className="w-28 h-28 rounded-full object-cover border-4 border-slate-100 shadow-md mb-4"
+            />
+          )}
+          {name.value && (
+            <h1 className={`text-4xl font-black uppercase tracking-wider ${name.isMock ? mockStyle + " text-slate-400" : "text-slate-900"}`}>
+              {name.value}
+            </h1>
+          )}
+          {jobTitle.value && (
+            <h2 className={`text-xl font-bold mt-1 tracking-widest ${jobTitle.isMock ? mockStyle + " text-slate-400" : "text-[var(--color-primary)]"}`}>
+              {jobTitle.value}
+            </h2>
+          )}
+          
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 mt-4 text-xs text-slate-600 max-w-2xl">
+            {renderContactListInline()}
+          </div>
+
+          {(!cvData.personal.includePhoto || !cvData.personal.photo) && (
+            <div className="absolute top-0 right-0 w-16 h-16 bg-white p-1 rounded-lg border border-slate-200 shadow-sm flex items-center justify-center">
+              <QRCode 
+                value={generateQRCodeContent()}
+                size={60}
+                style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                viewBox={`0 0 60 60`}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-4 flex-1">
+          {renderSummary()}
+          {renderExperience()}
+          {renderEducation()}
+          {renderProjects()}
+          
+          <div className="grid grid-cols-2 gap-6 mt-2">
+            <div>
+              {renderSkills()}
+              {renderLanguages()}
+            </div>
+            <div>
+              {renderCertificates()}
+              {renderInterests()}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderProfessional = () => {
+    return (
+      <div className="flex flex-1 -m-10 print:-m-8">
+        <div className="w-1/3 bg-slate-50 dark:bg-slate-900/30 p-8 flex flex-col border-r border-slate-200 dark:border-slate-800">
+          {cvData.personal.includePhoto && cvData.personal.photo && (
+            <div className="flex justify-center mb-6">
+              <img 
+                src={cvData.personal.photo} 
+                alt="Profile" 
+                className="w-32 h-32 rounded-2xl object-cover border-4 border-white dark:border-slate-800 shadow-md"
+              />
+            </div>
+          )}
+          
+          <div className="space-y-3 mb-8 text-xs text-slate-600 dark:text-slate-400">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 pb-1 mb-2">Contact</h4>
+            {renderContactListVertical()}
+          </div>
+
+          {renderSkills()}
+          {renderLanguages()}
+          {renderInterests()}
+
+          <div className="mt-auto pt-6 flex justify-center">
+            <div className="bg-white p-2 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+              <QRCode 
+                value={generateQRCodeContent()}
+                size={80}
+                style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                viewBox={`0 0 80 80`}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="w-2/3 p-8 flex flex-col">
+          <div className="border-b-2 border-[var(--color-primary)] pb-4 mb-6">
+            {name.value && (
+              <h1 className={`text-3xl font-black uppercase tracking-wider ${name.isMock ? mockStyle + " text-slate-400" : "text-slate-900 dark:text-white"}`}>
+                {name.value}
+              </h1>
+            )}
+            {jobTitle.value && (
+              <h2 className={`text-lg font-bold mt-1 ${jobTitle.isMock ? mockStyle + " text-slate-400" : "text-[var(--color-primary)]"}`}>
+                {jobTitle.value}
+              </h2>
+            )}
+          </div>
+
+          {renderSummary()}
+          {renderExperience()}
+          {renderEducation()}
+          {renderProjects()}
+          {renderCertificates()}
+        </div>
+      </div>
+    );
+  };
+
+  const renderMinimalist = () => {
+    return (
+      <div className="flex flex-col flex-1">
+        <div className="border-b border-slate-200 pb-4 mb-6 flex justify-between items-end">
+          <div>
+            {name.value && (
+              <h1 className={`text-2xl font-bold ${name.isMock ? mockStyle + " text-slate-400" : "text-slate-900"}`}>
+                {name.value}
+              </h1>
+            )}
+            {jobTitle.value && (
+              <h2 className={`text-sm font-semibold tracking-wider uppercase mt-0.5 ${jobTitle.isMock ? mockStyle + " text-slate-400" : "text-[var(--color-primary)]"}`}>
+                {jobTitle.value}
+              </h2>
+            )}
+            <div className="flex flex-wrap gap-x-3 mt-2 text-[10px] text-slate-500">
+              {renderContactListInlinePlain()}
+            </div>
+          </div>
+
+          {cvData.personal.includePhoto && cvData.personal.photo && (
+            <img 
+              src={cvData.personal.photo} 
+              alt="Profile" 
+              className="w-16 h-16 rounded object-cover border border-slate-200"
+            />
+          )}
+        </div>
+
+        <div className="flex flex-col gap-4 flex-1">
+          {renderSummary()}
+          {renderExperience()}
+          {renderEducation()}
+          {renderProjects()}
+          
+          <div className="grid grid-cols-2 gap-4 mt-2">
+            {renderSkills()}
+            {renderLanguages()}
+          </div>
+          {renderCertificates()}
+          {renderInterests()}
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div 
+      style={{ "--color-primary": primaryColor } as React.CSSProperties}
+      className="w-full min-h-[297mm] bg-white text-slate-800 p-10 print:p-8 flex flex-col font-sans overflow-visible relative pb-20 print:pb-20"
+    >
+      {(() => {
+        const layout = cvData.layout || "classic";
+        switch (layout) {
+          case "modern":
+            return renderModern();
+          case "professional":
+            return renderProfessional();
+          case "minimalist":
+            return renderMinimalist();
+          case "classic":
+          default:
+            return renderClassic();
+        }
+      })()}
+
+      {cvData.layout !== "professional" && cvData.personal.includePhoto && cvData.personal.photo && (
         <div className={`print:fixed absolute bottom-4 right-4 w-20 h-20 bg-white p-1 rounded-lg border border-slate-200 shadow-sm flex items-center justify-center ${name.isMock ? "opacity-40 grayscale" : ""} z-50`}>
           <QRCode 
             value={generateQRCodeContent()}

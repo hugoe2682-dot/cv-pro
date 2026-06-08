@@ -49,6 +49,8 @@ model User {
   password                String?
   confirmationCode        String?
   confirmationCodeExpires DateTime?
+  role                    String    @default("user")
+  blocked                 Boolean   @default(false)
   accounts                Account[]
   cvs                     CV[]
   sessions                Session[]
