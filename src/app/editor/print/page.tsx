@@ -42,7 +42,7 @@ export default function PrintPage() {
   }
 
   return (
-    <div className="w-full bg-white flex justify-center items-start print:p-0">
+    <div id="print-root" className="w-full bg-white flex justify-center items-start print:block print:p-0">
       <style dangerouslySetInnerHTML={{ __html: `
         @page {
           size: A4;
@@ -65,7 +65,7 @@ export default function PrintPage() {
           }
 
           /* Force le conteneur principal à être en bloc sans flexbox */
-          div.print\\:p-0 {
+          #print-root {
             display: block !important;
             width: 210mm !important;
             margin: 0 !important;
@@ -73,14 +73,14 @@ export default function PrintPage() {
           }
 
           /* Ajuster la hauteur et le padding du conteneur du CV pour l'impression A4 */
-          .w-\\[210mm\\] {
+          #print-cv-wrapper {
             width: 210mm !important;
             margin: 0 !important;
             padding: 0 !important;
             display: block !important;
           }
 
-          .w-\\[210mm\\] > div {
+          #print-cv-wrapper > div {
             padding-bottom: 12mm !important;
             min-height: 297mm !important;
             height: auto !important;
@@ -113,7 +113,7 @@ export default function PrintPage() {
           background: white !important;
         }
       `}} />
-      <div className="w-[210mm] bg-white print:shadow-none">
+      <div id="print-cv-wrapper" className="w-[210mm] bg-white print:shadow-none print:block print:w-[210mm] print:mx-0 print:my-0">
         <CVPreview cvData={cvData} showExamples={false} />
       </div>
     </div>
