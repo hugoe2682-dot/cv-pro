@@ -92,7 +92,7 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
   const renderSummary = () => {
     if (!summary.value) return null;
     return (
-      <div className="mb-6">
+      <div className="mb-6 break-inside-avoid">
         <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-3">Profil</h3>
         <p className={`text-xs leading-relaxed ${summary.isMock ? mockStyle + " text-slate-400" : "text-slate-700"}`}>
           {summary.value}
@@ -104,11 +104,11 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
   const renderEducation = () => {
     if (education.length === 0) return null;
     return (
-      <div className="mb-6">
+      <div className="mb-6 break-inside-avoid">
         <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Études et Formations</h3>
         <div className="space-y-4">
           {education.map((edu: any, idx: number) => (
-            <div key={edu.id || idx}>
+            <div key={edu.id || idx} className="break-inside-avoid">
               <div className="flex justify-between items-baseline mb-0.5">
                 <h4 className={`text-xs font-bold ${!hasEducation ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
                   {edu.degree || "Nom du diplôme"}
@@ -133,11 +133,11 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
   const renderExperience = () => {
     if (experience.length === 0) return null;
     return (
-      <div className="mb-6">
+      <div className="mb-6 break-inside-avoid">
         <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Expérience Professionnelle</h3>
         <div className="space-y-4">
           {experience.map((exp: any, idx: number) => (
-            <div key={exp.id || idx}>
+            <div key={exp.id || idx} className="break-inside-avoid">
               <div className="flex justify-between items-baseline mb-0.5">
                 <h4 className={`text-xs font-bold ${!hasExperience ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
                   {exp.title || "Poste"}
@@ -165,11 +165,11 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
   const renderProjects = () => {
     if (projects.length === 0) return null;
     return (
-      <div className="mb-6">
+      <div className="mb-6 break-inside-avoid">
         <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Projets</h3>
         <div className="space-y-4">
           {projects.map((project: any, idx: number) => (
-            <div key={project.id || idx}>
+            <div key={project.id || idx} className="break-inside-avoid">
               <div className="flex justify-between items-baseline mb-0.5">
                 <h4 className={`text-xs font-bold ${!hasProjects ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
                   {project.title || "Titre du projet"}
@@ -194,7 +194,7 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
   const renderSkills = () => {
     if (skills.length === 0) return null;
     return (
-      <div className="mb-6">
+      <div className="mb-6 break-inside-avoid">
         <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Compétences</h3>
         <div className="flex flex-wrap gap-2">
           {skills.map((skill: string, index: number) => (
@@ -210,7 +210,7 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
   const renderLanguages = () => {
     if (languages.length === 0) return null;
     return (
-      <div className="mb-6">
+      <div className="mb-6 break-inside-avoid">
         <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Langues</h3>
         <div className="space-y-2.5">
           {languages.map((lang: any, idx: number) => (
@@ -234,11 +234,11 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
   const renderCertificates = () => {
     if (certificates.length === 0) return null;
     return (
-      <div className="mb-6">
+      <div className="mb-6 break-inside-avoid">
         <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Certificats</h3>
         <div className="space-y-3">
           {certificates.map((cert: any, idx: number) => (
-            <div key={cert.id || idx} className="flex flex-col gap-1.5">
+            <div key={cert.id || idx} className="flex flex-col gap-1.5 break-inside-avoid">
               <span className={`font-medium text-xs ${!hasCertificates ? mockStyle + " text-slate-400" : "text-slate-800"}`}>
                 {cert.title || "Titre du certificat"}
               </span>
@@ -255,7 +255,7 @@ export default function CVPreview({ cvData, showExamples, cvId, isPublicView }: 
   const renderInterests = () => {
     if (interests.length === 0) return null;
     return (
-      <div className="mb-6">
+      <div className="mb-6 break-inside-avoid">
         <h3 className="text-md font-bold text-slate-900 uppercase tracking-wide border-b border-slate-200 pb-1 mb-4">Centres d'intérêt</h3>
         <div className="flex flex-wrap gap-1.5">
           {interests.map((interest: string, index: number) => (

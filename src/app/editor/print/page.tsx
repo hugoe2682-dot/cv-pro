@@ -61,6 +61,25 @@ export default function PrintPage() {
             print-color-adjust: exact !important;
           }
 
+          /* Ajuster la hauteur et le padding du conteneur du CV pour l'impression A4 */
+          .w-\\[210mm\\] > div {
+            padding-bottom: 12mm !important;
+            min-height: 297mm !important;
+            height: auto !important;
+            box-sizing: border-box !important;
+          }
+
+          /* Éviter les coupures de page en plein milieu d'une section ou d'un élément */
+          .break-inside-avoid,
+          h1, h2, h3, h4, p, li, img,
+          .mb-6, .mb-4,
+          .space-y-4 > div,
+          .space-y-3 > div,
+          .space-y-2\\.5 > div {
+            break-inside: avoid-page !important;
+            page-break-inside: avoid !important;
+          }
+
           /* Cacher la navbar et tout ce qui n'est pas le CV */
           nav,
           header,
